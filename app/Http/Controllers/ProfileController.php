@@ -15,6 +15,24 @@ class ProfileController extends Controller
     /**
      * Display the user's profile form.
      */
+
+    public function index(Request $request)
+{
+    $user = $request->user(); 
+    
+    
+    $currentTab = $request->query('tab', 'main'); 
+
+    
+    $menus = [
+        ['icon' => '📩', 'label' => 'Email Setting', 'route' => 'profile.app', 'params' => ['tab' => 'email']],
+        ['icon' => '🔒', 'label' => 'Account Security', 'route' => 'profile.app', 'params' => ['tab' => 'account']],
+    ];
+
+    return view('profile.mobile-profile', compact('user', 'currentTab', 'menus'));
+}
+
+
     public function edit(Request $request): View
     {
         return view('profile.edit', [

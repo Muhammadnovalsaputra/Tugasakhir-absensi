@@ -1,10 +1,4 @@
 <x-app-layout>
-    <div class="flex h-screen bg-gray-100">
-        @include('inc.sidebar')
-
-        <main class="flex-1 overflow-y-auto">
-            @include('inc.header')
-
             <div class="p-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative">
@@ -116,6 +110,4 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
 </x-app-layout>

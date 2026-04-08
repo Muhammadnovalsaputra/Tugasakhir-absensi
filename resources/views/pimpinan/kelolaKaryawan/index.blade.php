@@ -1,17 +1,13 @@
 <x-app-layout>
-    <div class="flex h-screen bg-gray-100">
-        @include('inc.sidebar')
-        <main class="flex-1 overflow-y-auto">
-            @include('inc.header')
-            <div class="p-8">
+        <div class="p-8">
     <div class="p-8 bg-gray-50 min-h-screen">
         <div class="flex justify-between items-center mb-8">
             <h2 class="text-2xl font-bold text-gray-800">Kelola Karyawan</h2>
             @if(session('success'))
-            <div class="mb-4 p-4 bg-green-100 border border-green-200 text-green-700 rounded-xl font-bold text-sm">
-                {{ session('success') }}
-            </div>
-             @endif
+                <div id="success-message" class="mb-4 p-4 bg-green-100 border border-green-200 text-green-700 rounded-xl font-bold text-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
             <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition duration-200 shadow-lg shadow-blue-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
                 Tambah Karyawan
@@ -59,10 +55,10 @@
                                     </svg>
                                 </button>
 
-                                <form action="{{ route('kelolaKaryawan.destroy', $k->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus karyawan ini?')">
+                                <form action="{{ route('kelolaKaryawan.destroy', $k->id) }}" method="POST" class="form-delete">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-gray-400 hover:text-red-600 transition duration-200">
+                                    <button type="button" onclick="confirmDelete(this)" class="text-gray-400 hover:text-red-600 transition duration-200">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
@@ -75,7 +71,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
 </x-app-layout>
 
 <div id="modalKaryawan" class="fixed inset-0 z-50 hidden overflow-y-auto">
@@ -202,8 +197,48 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-    
+    function confirmDelete(button) {
+        const form = button.closest('.form-delete');
+        
+        Swal.fire({
+            title: 'Apakah Kamu Yakin?', 
+            text: 'Tindakan ini tidak dapat dibatalkan.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ed0202', 
+            cancelButtonColor: '#f3f4f6',  
+            confirmButtonText: 'Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-3xl',
+                confirmButton: 'px-6 py-2 rounded-xl font-bold shadow-lg shadow-blue-100',
+                cancelButton: 'px-6 py-2 rounded-xl font-bold text-gray-500'
+            },
+            buttonsStyling: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    }
+
+    // 2. Auto-hide pesan sukses (3 detik)
+    @if(session('success'))
+    setTimeout(function() {
+        const message = document.getElementById('success-message');
+        if (message) {
+            message.style.transition = "opacity 0.5s ease";
+            message.style.opacity = "0";
+            setTimeout(() => message.remove(), 500);
+        }
+    }, 3000); 
+    @endif
+
+    // 3. Fungsi Modal Tambah
     function openModal() {
         document.getElementById('modalKaryawan').classList.remove('hidden');
         document.body.style.overflow = 'hidden'; 
@@ -211,21 +246,18 @@
 
     function closeModal() {
         document.getElementById('modalKaryawan').classList.add('hidden');
-        document.body.style.overflow = 'auto'; 
+        document.body.style.overflow = 'auto';   
     }
 
-    
+    // 4. Fungsi Modal Edit
     function openEditModal(user) {
-        
         const form = document.getElementById('editFormKaryawan');
         form.action = `/pimpinan/kelolaKaryawan/${user.id}`;
-
-        // Isi data ke dalam input modal
+        
         document.getElementById('edit_name').value = user.name;
         document.getElementById('edit_email').value = user.email;
         document.getElementById('edit_role').value = user.role;
 
-        // Tampilkan modal
         document.getElementById('modalEditKaryawan').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }

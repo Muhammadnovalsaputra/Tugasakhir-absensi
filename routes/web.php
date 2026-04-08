@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
-// 1. Rute Root: Langsung ke login jika belum login, ke dashboard jika sudah
+
 Route::get('/', function () {
     if (Auth::check()) {
         return redirect()->route('dashboard');
@@ -18,7 +18,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// 2. Rute yang Membutuhkan Login
+
 Route::middleware(['auth', 'verified'])->group(function () {
     
     
@@ -42,12 +42,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     ->name('pimpinan.pengajuanCuti.index');
     Route::patch('/pimpinan/pengajuan-cuti/{id}/update', [LeavePermitController::class, 'updateStatus'])
     ->name('pimpinan.pengajuanCuti.update');
+    Route::get('/rekapAbsensi', [AttendanceController::class, 'leaderIndex'])
+    ->name('pimpinan.rekapAbsensi.index');
+    Route::get('/rekapAbsensi/export', [AttendanceController::class, 'exportExcel'])
+    ->name('pimpinan.rekapAbsensi.export');
 
-    // Rute Absensi
+    
     Route::post('/attendance/checkin', [AttendanceController::class, 'checkin'])->name('attendance.checkin');
     Route::post('/attendance/checkout', [AttendanceController::class, 'checkout'])->name('attendance.checkout');
 
-    // Profile
+    
+    Route::get('/profile/app', [ProfileController::class, 'index'])->name('profile.app');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -60,17 +65,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/LeavePermit/{id}', [LeavePermitController::class, 'update'])->name('karyawan.pengajuanCuti.update');
     Route::delete('/LeavePermit/{id}', [LeavePermitController::class, 'destroy'])->name('karyawan.pengajuanCuti.destroy');
 
+    Route::get('/workSchedule', [AttendanceController::class, 'showSchedule'])->name('karyawan.jadwal');
+
     // Kelola Karyawan
     Route::middleware(['auth'])->group(function () {
     Route::get('/pimpinan/kelolaKaryawan', [ManageEmployesController::class, 'index'])->name('kelolaKaryawan.index');
     Route::post('/pimpinan/kelolaKaryawan', [ManageEmployesController::class, 'store'])->name('kelolaKaryawan.store');
     Route::put('/pimpinan/kelolaKaryawan/{id}', [ManageEmployesController::class, 'update'])->name('kelolaKaryawan.update');
-Route::delete('/pimpinan/kelolaKaryawan/{id}', [ManageEmployesController::class, 'destroy'])->name('kelolaKaryawan.destroy');
+    Route::delete('/pimpinan/kelolaKaryawan/{id}', [ManageEmployesController::class, 'destroy'])->name('kelolaKaryawan.destroy');
+    });
+
+    Route::prefix('pimpinan')->name('pimpinan.')->group(function () {
+    
+    Route::get('/setting-absensi', [ManageEmployesController::class, 'settingAttendance'])->name('settingAbsensi.index');
+    Route::get('/setting-absensi/{id}/edit', [ManageEmployesController::class, 'editAttendanceSetting'])->name('settingAbsensi.edit');
+    Route::put('/setting-absensi/{id}', [ManageEmployesController::class, 'updateAttendanceSetting'])->name('settingAbsensi.update');
 });
 
-    // Riwayat
+    
     Route::get('/Attendance', [AttendanceController::class, 'history'])
     ->name('karyawan.riwayat');
+
     
 });
 

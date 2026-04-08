@@ -22,4 +22,9 @@ class Attendance extends Model
         'image_out',
         'status',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

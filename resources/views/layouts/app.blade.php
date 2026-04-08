@@ -7,30 +7,36 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+    <body class="font-sans antialiased bg-gray-100">
+    <div class="flex min-h-screen">
+        {{-- Sidebar hanya untuk Pimpinan --}}
+        @if(Auth::check() && Auth::user()->role == 'Pimpinan')
+        <aside class="w-64 bg-blue-600 text-white hidden md:block flex-shrink-0 min-h-screen">
+            @include('inc.sidebar')
+        </aside>
+        @endif
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+        <div class="flex-1 flex flex-col min-w-0">
+            {{-- Header hanya untuk Pimpinan --}}
+            @if(Auth::check() && Auth::user()->role == 'Pimpinan')
+                @include('inc.header')
+            @endif
 
-            <!-- Page Content -->
-            <main>
+            {{-- Tambahkan pb-20 jika bukan pimpinan agar konten tidak tertutup footer navbar --}}
+            <main class="flex-1 {{ Auth::check() && Auth::user()->role != 'Pimpinan' ? 'pb-20' : '' }}">
                 {{ $slot }}
             </main>
+
+            {{-- Footer Navbar hanya untuk Karyawan (Bukan Pimpinan) --}}
+            @if(Auth::check() && Auth::user()->role != 'Pimpinan')
+                @include('inc.bottom')
+            @endif
         </div>
-    </body>
+    </div>
+</body>
 </html>

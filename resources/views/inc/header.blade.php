@@ -1,32 +1,47 @@
-<header class="bg-white shadow-sm p-4 flex justify-between items-center px-8">
+<header class="bg-white border-b border-gray-100 h-20 flex justify-between items-center px-8 sticky top-0 z-30">
     <div>
-        <h2 class="text-xl font-bold text-gray-800">
-            @yield('title', 'Dashboard')
+        <h2 class="text-xl font-black text-gray-800 tracking-tight">
+            @yield('title', 'Sistem Absensi')
         </h2>
-        <p class="text-sm text-gray-500">
-            {{ now()->translatedFormat('l, d F Y') }} | <span id="clock">{{ now()->format('H:i') }}</span>
-        </p>
     </div>
+
     <div class="flex items-center gap-4">
-        <button class="text-gray-400 hover:text-gray-600 relative">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-        </button>
-        <div class="flex items-center gap-3 border-l pl-4">
-            <div class="text-right hidden sm:block">
-                <p class="text-sm font-bold text-gray-700">{{ Auth::user()->name }}</p>
-                <p class="text-xs text-gray-500 uppercase">{{ Auth::user()->role ?? 'Pimpinan' }}</p>
-            </div>
-            <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-inner">
-                @if(Auth::user()->photo)
-                <img src="{{asset('storage/'. Auth::user()->photo)}}" alt="profile"
-                class="w-full h-full object-cover rounded-full">
-                @else
-                {{substr(Auth::user()->name, 0, 1)}}
-                @endif
-            </div>
+        
+
+        <div class="hidden sm:flex sm:items-center">
+            <x-dropdown align="right" width="48">
+                <x-slot name="trigger">
+                    <button class="flex items-center gap-3 focus:outline-none transition duration-150 ease-in-out">
+                        <div class="text-right hidden md:block">
+                            <p class="text-sm font-black text-gray-800 leading-none">{{ Auth::user()->name }}</p>
+                            <p class="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1">{{ Auth::user()->role }}</p>
+                        </div>
+                        
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-black border border-blue-100 overflow-hidden">
+                            @if(Auth::user()->photo)
+                                <img src="{{ asset('storage/'. Auth::user()->photo) }}" class="w-full h-full object-cover">
+                            @else
+                                {{ substr(Auth::user()->name, 0, 1) }}
+                            @endif
+                        </div>
+                    </button>
+                </x-slot>
+
+                <x-slot name="content">
+                    <x-dropdown-link :href="route('profile.edit')">
+                        {{ __('Profile Settings') }}
+                    </x-dropdown-link>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <x-dropdown-link :href="route('logout')"
+                                onclick="event.preventDefault();
+                                            this.closest('form').submit();">
+                            {{ __('Log Out') }}
+                        </x-dropdown-link>
+                    </form>
+                </x-slot>
+            </x-dropdown>
         </div>
     </div>
 </header>
