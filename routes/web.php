@@ -8,6 +8,8 @@ use App\Http\Controllers\ManageEmployesController;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schedule;
+
 use Carbon\Carbon;
 
 
@@ -18,25 +20,29 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Schedule::command('leave:reset-quota')->yearlyOn(1, 1, '00:00');
+
+
 
 Route::middleware(['auth', 'verified'])->group(function () {
     
     
     Route::get('/dashboard', function () {
-        if (Auth::user()->role === 'Pimpinan') {
-            return redirect()->route('pimpinan.dashboard');
-        }
+    if (Auth::user()->role === 'Pimpinan') {
+        return redirect()->route('pimpinan.dashboard');
+    }
+    $attendance = \App\Models\Attendance::where('user_id', Auth::id())
+        ->whereDate('date', \Carbon\Carbon::today())
+        ->first();
 
-        $attendance = Attendance::where('user_id', Auth::id())
-            ->whereDate('date', Carbon::today())
-            ->first();
+    $setting = \App\Models\AttendanceSetting::getActive(); // ✅ Tambahkan ini
 
-        return view('karyawan.index', compact('attendance'));
+    return view('karyawan.index', compact('attendance', 'setting')); // ✅ Kirim $setting
     })->name('dashboard');
 
     
 
-    // Dashboard Pimpinan
+
     Route::get('/pimpinan/dashboard', [DashboardController::class, 'index'])->name('pimpinan.dashboard');
     Route::get('/pimpinan/pengajuanCuti', [LeavePermitController::class, 'adminIndex'])
     ->name('pimpinan.pengajuanCuti.index');
@@ -50,7 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::post('/attendance/checkin', [AttendanceController::class, 'checkin'])->name('attendance.checkin');
     Route::post('/attendance/checkout', [AttendanceController::class, 'checkout'])->name('attendance.checkout');
-
+    Route::get('/Attendance', [AttendanceController::class, 'history'])->name('karyawan.riwayatKerja.index');
     
     Route::get('/profile/app', [ProfileController::class, 'index'])->name('profile.app');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -77,17 +83,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('pimpinan')->name('pimpinan.')->group(function () {
     
-    Route::get('/setting-absensi', [ManageEmployesController::class, 'settingAttendance'])->name('settingAbsensi.index');
-    Route::get('/setting-absensi/{id}/edit', [ManageEmployesController::class, 'editAttendanceSetting'])->name('settingAbsensi.edit');
-    Route::put('/setting-absensi/{id}', [ManageEmployesController::class, 'updateAttendanceSetting'])->name('settingAbsensi.update');
+    Route::get('/setting-absensi', [ManageEmployesController::class, 'settingAttendance'])
+         ->name('settingAbsensi.index');
+    Route::post('/setting-absensi', [ManageEmployesController::class, 'updateAttendanceSetting'])
+         ->name('settingAbsensi.update');
+
 });
 
     
-    Route::get('/Attendance', [AttendanceController::class, 'history'])
-    ->name('karyawan.riwayat');
+   
 
     
 });
 
-// 3. Load rute bawaan (login, logout, register)
+
 require __DIR__.'/auth.php';

@@ -45,9 +45,6 @@ class AuthenticatedSessionController extends Controller
     ->with('success','Anda Berhasil Login!');
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();

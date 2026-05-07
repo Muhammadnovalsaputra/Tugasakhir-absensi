@@ -33,7 +33,11 @@
             </div>
 
             <div class="text-3xl font-black text-gray-800 mb-1" id="liveTime">00:00:00</div>
-            <p class="text-gray-400 text-sm mb-6">{{ Auth::user()->startTime ?? '09:00' }} - {{ Auth::user()->quitTime ?? '18:00' }}</p>
+            <p class="text-gray-400 text-sm mb-6">
+                {{ $setting ? \Carbon\Carbon::parse($setting->start_time)->format('H:i') : '09:00' }} 
+                - 
+                {{ $setting ? \Carbon\Carbon::parse($setting->quit_time)->format('H:i') : '18:00' }}
+            </p>
 
             <div x-data="{ openKamera: false }" class="space-y-4">
                 @if(!$attendance)
@@ -81,7 +85,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-8 max-w-xs mx-auto justify-items-center">
+        <div class="grid grid-cols-3 gap-4 mb-8 max-w-xs mx-auto justify-items-center">
             <a href="{{ route('karyawan.jadwal') }}" class="flex flex-col items-center gap-2 group">
                 <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm group-active:scale-90 transition">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,27 +103,52 @@
                 </div>
                 <span class="text-xs font-bold text-gray-600">Ajukan Cuti</span>
             </a>
+
+            <a href="{{ route('karyawan.riwayatKerja.index') }}" class="flex flex-col items-center gap-2 group">
+                <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center shadow-sm group-active:scale-90 transition">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs font-bold text-gray-600">Riwayat Absensi</span>
+            </a>
         </div>
 
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <h4 class="font-bold text-gray-800 text-sm mb-4">Aktivitas Terakhir</h4>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between border-l-4 border-blue-500 pl-3">
-                    <div>
-                        <p class="text-xs font-bold text-gray-800">Check In</p>
-                        <p class="text-[10px] text-gray-400">Kemarin, 27 Jul</p>
-                    </div>
-                    <span class="text-sm font-semibold text-gray-700">08:59</span>
-                </div>
-                <div class="flex items-center justify-between border-l-4 border-red-400 pl-3">
-                    <div>
-                        <p class="text-xs font-bold text-gray-800">Check Out</p>
-                        <p class="text-[10px] text-gray-400">Kemarin, 27 Jul</p>
-                    </div>
-                    <span class="text-sm font-semibold text-gray-700">18:02</span>
-                </div>
+    <h4 class="font-bold text-gray-800 text-sm mb-4">Aktivitas Terakhir</h4>
+    <div class="space-y-4">
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+    <h4 class="font-bold text-gray-800 text-sm mb-4">Aktivitas Terakhir Saya</h4>
+    <div class="space-y-4">
+        
+        <!-- Baris Check In -->
+        <div class="flex items-center justify-between border-l-4 {{ $attendance ? 'border-blue-500' : 'border-gray-200' }} pl-3">
+            <div>
+                <p class="text-xs font-bold text-gray-800">Check In</p>
+                <p class="text-[10px] text-gray-400">
+                    {{ $attendance ? \Carbon\Carbon::parse($attendance->date)->translatedFormat('d M Y') : 'Belum ada record hari ini' }}
+                </p>
             </div>
+            <span class="text-sm font-semibold text-gray-700">
+                {{ $attendance ? \Carbon\Carbon::parse($attendance->check_in)->format('H:i') : '--:--' }}
+            </span>
         </div>
+
+        <!-- Baris Check Out -->
+        <div class="flex items-center justify-between border-l-4 {{ ($attendance && $attendance->check_out) ? 'border-red-400' : 'border-gray-200' }} pl-3">
+            <div>
+                <p class="text-xs font-bold text-gray-800">Check Out</p>
+                <p class="text-[10px] text-gray-400">
+                    {{ ($attendance && $attendance->check_out) ? \Carbon\Carbon::parse($attendance->date)->translatedFormat('d M Y') : 'Belum ada record hari ini' }}
+                </p>
+            </div>
+            <span class="text-sm font-semibold text-gray-700">
+                {{ ($attendance && $attendance->check_out) ? \Carbon\Carbon::parse($attendance->check_out)->format('H:i') : '--:--' }}
+            </span>
+        </div>
+
+    </div>
+</div>
     </div>
 
     

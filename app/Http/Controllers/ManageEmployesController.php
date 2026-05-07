@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\AttendanceSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -11,62 +12,63 @@ use Illuminate\Http\Request;
 class ManageEmployesController extends Controller
 {
     public function settingAttendance()
-    {
-        $employes = User::all(); 
-        return view('pimpinan.settingAbsensi.index', compact('employes'));
-    }
+        {
+            $setting = AttendanceSetting::getActive() ?? new AttendanceSetting();
+            return view('pimpinan.settingAbsensi.index', compact('setting'));
+        }
 
     
     public function editAttendanceSetting($id)
-    {
-        $user = User::findOrFail($id); 
-        return view('pimpinan.settingAbsensi.edit', compact('user'));
-    }
+        {
+            $user = User::findOrFail($id); 
+            return view('pimpinan.settingAbsensi.edit', compact('user'));
+        }
 
-    public function updateAttendanceSetting(Request $request, $id)
-{
-    
-    $request->validate([
-        'latitude'  => 'required',
-        'longitude' => 'required',
-        'radius'    => 'required|numeric|min:10',
-        'startTime' => 'required', 
-        'quitTime'  => 'required', 
-        'jadwal'    => 'required|array'
-    ]);
+    public function updateAttendanceSetting(Request $request)
+        {
+            $request->validate([
+                'latitude'     => 'required|numeric',
+                'longitude'    => 'required|numeric',
+                'radius'       => 'required|numeric|min:10',
+                'start_time'   => 'required|date_format:H:i',
+                'quit_time'    => 'required|date_format:H:i|after:start_time',
+                'work_schedule' => 'required|array|min:1',
+                'work_schedule.*' => 'in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            ]);
 
-    $user = User::findOrFail($id);
-    
-    
-    $user->update([
-        'latitude'     => $request->latitude,
-        'longitude'    => $request->longitude,
-        'radius'       => $request->radius,
-        'startTime'    => $request->startTime,
-        'quitTime'     => $request->quitTime,
-        'workSchedule' => $request->jadwal, 
-    ]);
+            // Selalu update baris pertama (id=1), atau buat baru jika belum ada
+            AttendanceSetting::updateOrCreate(
+                ['id' => 1],
+                [
+                    'latitude'      => $request->latitude,
+                    'longitude'     => $request->longitude,
+                    'radius'        => $request->radius,
+                    'start_time'    => $request->start_time,
+                    'quit_time'     => $request->quit_time,
+                    'work_schedule' => $request->work_schedule,
+                ]
+            );
 
-    
-    return redirect()->route('pimpinan.settingAbsensi.edit', $id)
-                     ->with('success', 'Konfigurasi absensi berhasil diperbarui!');
-}
+            return redirect()->route('pimpinan.settingAbsensi.index')
+                            ->with('success', 'Konfigurasi absensi global berhasil diperbarui!');
+        }
 
 
     
 
     public function index() {
-        $employes = User::all();
-        return view('pimpinan.kelolaKaryawan.index', compact('employes'));
+    $employes = User::where('id', '!=', auth()->id())->get();
+    return view('pimpinan.kelolaKaryawan.index', compact('employes'));
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+     {
         $request->validate([
             'name'     => 'required',
             'email'    => 'required|email|unique:users',
             'password' => 'required|min:8',
             'role'     => 'required',
-            'photo'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'photo'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $data = $request->all();
@@ -81,23 +83,23 @@ class ManageEmployesController extends Controller
     }
 
     public function update(Request $request, $id) {
-        $request->validate([
+            $request->validate([
             'name'  => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$id,
+            'email' => 'required|email|unique:users,email,' . $id,
             'role'  => 'required',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $user = User::findOrFail($id);
-        $user->name = $request->name;
+        $user->name  = $request->name;
         $user->email = $request->email;
-        $user->role = $request->role;
+        $user->role  = $request->role;
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
 
-        if($request->hasfile('photo')){
+        if ($request->hasFile('photo')) {
             if ($user->photo) {
                 Storage::disk('public')->delete($user->photo);
             }
@@ -114,11 +116,11 @@ class ManageEmployesController extends Controller
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', 'Anda tidak bisa menghapus akun sendiri');
         }
-        
+
         if ($user->photo) {
             Storage::disk('public')->delete($user->photo);
         }
-        
+
         $user->delete();
         return redirect()->back()->with('success', 'Karyawan berhasil dihapus');
     }
