@@ -2,10 +2,8 @@
 
 namespace App\Models;
 
-use App\Models\User;
-use Carbon\Carbon;
-
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LeavePermit extends Model
 {
@@ -17,13 +15,57 @@ class LeavePermit extends Model
         'reason',
         'status'
     ];
-    public function user() {
-    return $this->belongsTo(User::class);
+
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
+    public function getDurationAttribute(): int
+    {
+        return $this->start_date->diffInDays($this->end_date) + 1;
+    }
+
+    
     public function getDurationDaysAttribute(): int
     {
-        return Carbon::parse($this->start_date)
-            ->diffInDays(Carbon::parse($this->end_date)) + 1;
+        return $this->getDurationAttribute();
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'Pending';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'Approved';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'Rejected';
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'Pending');
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'Approved');
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'Rejected');
     }
 }

@@ -37,13 +37,12 @@ class AuthenticatedSessionController extends Controller
         $user = $request->user();
     
     if ($user->role === 'Pimpinan') {
-        return redirect()->intended(route('pimpinan.dashboard'))
-        ->with('success', 'Selamat Datang Kembali' . $user->name);
-    }
+    return redirect()->route('pimpinan.dashboard');
+}
 
-    return redirect()->intended(route('dashboard'))
-    ->with('success','Anda Berhasil Login!');
-    }
+
+return redirect()->route('dashboard');
+}
 
     public function destroy(Request $request): RedirectResponse
     {

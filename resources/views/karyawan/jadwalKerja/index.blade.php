@@ -1,217 +1,353 @@
 <x-app-layout>
-    <div x-data="calendarApp()" x-init="init()" class="max-w-md mx-auto mb-24">
-        
-        <div class="bg-blue-900 text-white p-6 pb-20 rounded-b-[3rem] shadow-lg">
+    <div x-data="scheduleApp()" x-init="init()" class="max-w-md mx-auto mb-24 bg-gray-50 min-h-screen">
+
+        {{-- Header --}}
+        <div class="bg-gradient-to-br from-blue-500 to-blue-700 text-white px-6 pt-10 pb-24 relative">
             <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-sm opacity-80">Jadwal & Riwayat,</p>
-                    <h2 class="text-xl font-bold">{{ Auth::user()->name }}</h2>
-                    <p class="text-[10px] opacity-70">Radius Kerja: {{ Auth::user()->radius }}m</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+                        <img src="{{ Auth::user()->photo ? asset('storage/'.Auth::user()->photo) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=60a5fa&color=fff' }}"
+                             class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <p class="text-xs opacity-75">Selamat datang</p>
+                        <p class="font-bold text-base leading-tight">{{ Auth::user()->name }}</p>
+                    </div>
                 </div>
-                <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-gray-200">
-                    <img src="{{ Auth::user()->photo ? asset('storage/'.Auth::user()->photo) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name) }}" class="w-full h-full object-cover">
-                </div>
+                
+            </div>
+
+            <div class="mt-5">
+                <p class="text-xs font-semibold uppercase tracking-widest opacity-70">JADWAL KERJA</p>
+                <p class="text-2xl font-bold mt-1" x-text="headerDateLabel"></p>
             </div>
         </div>
 
-        <div class="px-4 -mt-16">
-            <div class="bg-white rounded-3xl shadow-xl p-6 mb-8 border border-gray-100">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-black text-2xl text-gray-800" x-text="monthNames[month] + ' ' + year"></h3>
-                    <div class="flex gap-4 text-gray-400">
-                        <button @click="prevMonth()" class="p-2 hover:bg-gray-100 rounded-full transition active:scale-90">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                        </button>
-                        <button @click="nextMonth()" class="p-2 hover:bg-gray-100 rounded-full transition active:scale-90">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
-                    </div>
-                </div>
+        {{-- Weekly Strip --}}
+        <div class="mx-4 -mt-16 bg-white rounded-2xl shadow-lg px-4 py-5 relative z-10">
+            {{-- Week Nav --}}
+            <div class="flex justify-between items-center mb-4">
+                <button @click="prevWeek()" class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <p class="text-xs font-semibold text-gray-500" x-text="weekRangeLabel"></p>
+                <button @click="nextWeek()" class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
 
-                <div class="grid grid-cols-7 gap-2 text-center mb-2">
-                    <template x-for="day in ['S','M','T','W','T','F','S']">
-                        <span class="text-xs font-bold text-gray-400" x-text="day"></span>
-                    </template>
-                </div>
-
-                <div class="grid grid-cols-7 gap-2 text-center">
-                    <template x-for="blankday in blankdays">
-                        <div class="py-2"></div>
-                    </template>
-
-                    <template x-for="(date, dateIndex) in no_of_days" :key="dateIndex">
-                        <div class="relative py-1">
-                            <button 
-                                @click="selectDate(date)"
-                                class="text-sm font-semibold w-9 h-9 flex items-center justify-center mx-auto rounded-full transition-all relative"
+            {{-- Day Columns --}}
+            <div class="flex justify-between">
+                <template x-for="(day, idx) in weekDays" :key="idx">
+                    <div class="flex flex-col items-center gap-1.5 cursor-pointer" @click="selectDay(day)">
+                        <span class="text-[10px] font-bold uppercase"
+                              :class="isSelectedDay(day) ? 'text-blue-600' : 'text-gray-400'"
+                              x-text="day.shortName"></span>
+                        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all"
                                 :class="{
-                                    'bg-blue-600 text-white shadow-lg scale-110': isSelected(date),
-                                    'text-blue-600 font-black border border-blue-100': isToday(date) && !isSelected(date),
-                                    'text-gray-700 hover:bg-gray-50': !isToday(date) && !isSelected(date)
-                                }">
-                                <span x-text="date"></span>
-                                <template x-if="hasHistory(date)">
-                                    <div class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-green-500"></div>
-                                </template>
-                            </button>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <div class="space-y-6">
-                <h4 class="text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] border-b pb-2 flex justify-between">
-                    <span x-text="'Detail: ' + selectedDateFormatted"></span>
-                    <span class="text-blue-500 font-black" x-text="isWorkDaySelected() ? 'Jadwal Kerja' : 'Libur'"></span>
-                </h4>
-
-                <template x-if="getHistoryForSelectedDate()">
-                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-2xl shadow-sm animate-fadeIn">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Riwayat Absensi Terdeteksi</span>
-                            <span class="text-[10px] bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-bold" x-text="getHistoryForSelectedDate().status"></span>
-                        </div>
-                        <div class="flex gap-8 text-gray-700">
-                            <div>
-                                <p class="text-[10px] text-gray-500 uppercase font-bold">Check In</p>
-                                <p class="font-black text-lg" x-text="getHistoryForSelectedDate().check_in"></p>
-                            </div>
-                            <div class="border-l border-green-200 pl-8">
-                                <p class="text-[10px] text-gray-500 uppercase font-bold">Check Out</p>
-                                <p class="font-black text-lg" x-text="getHistoryForSelectedDate().check_out || '--:--'"></p>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-
-                <div class="flex gap-6 items-start">
-                    <div class="text-gray-400 text-[11px] font-bold w-14 pt-1 text-right">
-                        <span x-text="isWorkDaySelected() ? '{{ date('H:i', strtotime(Auth::user()->startTime)) }}' : '--:--'"></span>
-                        <div class="text-[9px] opacity-50 mt-1 uppercase" x-text="selectedDayName"></div>
-                    </div>
-
-                    <div class="relative flex-1 p-5 rounded-2xl shadow-sm border-l-4 bg-white transition-all"
-                        :class="isWorkDaySelected() ? 'border-blue-600' : 'border-gray-300 opacity-60 bg-gray-50'">
-                        
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h5 class="font-bold text-sm text-gray-800" 
-                                    x-text="isWorkDaySelected() ? 'Shift Kerja ' + selectedDayName : 'Tidak Ada Jadwal / Off'"></h5>
-                                <p class="text-[10px] text-gray-400 mt-1" 
-                                    x-text="isWorkDaySelected() ? 'Jam Pulang: {{ date('H:i', strtotime(Auth::user()->quitTime)) }}' : 'Nikmati waktu istirahat Anda'"></p>
-                            </div>
-                            
-                            <template x-if="isTodaySelected()">
-                                <span class="bg-blue-100 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Hari Ini</span>
-                            </template>
-                        </div>
-                        
-                        <div class="absolute -left-[32px] top-6 w-3 h-3 rounded-full border-2 border-white transition-colors"
-                            :class="isWorkDaySelected() ? 'bg-blue-600 shadow-sm' : 'bg-gray-300'">
-                        </div>
-                    </div>
-                </div>
-
-                <template x-if="!isWorkDaySelected() && !getHistoryForSelectedDate()">
-                    <div class="text-center p-6 border-2 border-dashed border-gray-100 rounded-3xl">
-                        <p class="text-gray-400 text-xs italic">Keterangan: Hari Libur Mingguan</p>
+                                    'bg-blue-600 text-white shadow-md scale-110': isSelectedDay(day),
+                                    'text-gray-700 hover:bg-gray-100': !isSelectedDay(day)
+                                }"
+                                x-text="day.date"></button>
+                        <div class="w-1.5 h-1.5 rounded-full transition-colors"
+                             :class="hasHistory(day) ? 'bg-purple-500' : 'bg-transparent'"></div>
                     </div>
                 </template>
             </div>
+        </div>
+
+        {{-- Content --}}
+        <div class="mx-4 mt-5 space-y-4">
+
+            {{-- Tag Row --}}
+            <div class="flex gap-2">
+                <span class="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                    <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                        <path stroke-linecap="round" stroke-width="2" d="M12 6v6l4 2"/>
+                    </svg>
+                    <span x-text="isTodaySelected() ? 'Hari Ini' : selectedDayLabel"></span>
+                </span>
+                <template x-if="isWorkDaySelected()">
+                    <span class="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                        <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="3" y="7" width="18" height="14" rx="2" stroke-width="2"/>
+                            <path stroke-linecap="round" stroke-width="2" d="M8 7V5a2 2 0 014 0v2M16 7V5a2 2 0 014 0v2"/>
+                        </svg>
+                        Shift Pagi
+                    </span>
+                </template>
+                <template x-if="!isWorkDaySelected()">
+                    <span class="flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                        Hari Libur
+                    </span>
+                </template>
+            </div>
+
+            {{-- Check in / Check out --}}
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-green-50 border border-green-100 rounded-2xl p-4">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        <p class="text-[10px] font-bold text-green-600 uppercase tracking-wide">JAM MASUK</p>
+                    </div>
+                    <p class="text-3xl font-black text-green-500 leading-none tracking-tight"
+                       x-text="isWorkDaySelected() ? '{{ $setting ? date('H:i', strtotime($setting->start_time)) : '--:--' }}' : '--:--'"></p>
+                    <p class="text-[10px] text-green-400 mt-1 font-semibold">WIB</p>
+                </div>
+                <div class="bg-red-50 border border-red-100 rounded-2xl p-4">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"/>
+                        </svg>
+                        <p class="text-[10px] font-bold text-red-400 uppercase tracking-wide">JAM PULANG</p>
+                    </div>
+                    <p class="text-3xl font-black text-red-400 leading-none tracking-tight"
+                       x-text="isWorkDaySelected() ? '{{ $setting ? date('H:i', strtotime($setting->quit_time)) : '--:--' }}' : '--:--'"></p>
+                    <p class="text-[10px] text-red-300 mt-1 font-semibold">WIB</p>
+                </div>
+            </div>
+
+            {{-- Progress Jam Kerja --}}
+            <template x-if="isWorkDaySelected() && isTodaySelected()">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                            <p class="text-sm font-bold text-gray-800">Progress Jam Kerja</p>
+                        </div>
+                        <span class="text-sm font-bold text-blue-600" x-text="workProgress + '%'"></span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-500"
+                             :style="'width: ' + workProgress + '%'"></div>
+                    </div>
+                    <div class="flex items-center gap-1.5 mt-2.5">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                            <path stroke-linecap="round" stroke-width="2" d="M12 6v6l4 2"/>
+                        </svg>
+                        <p class="text-xs text-gray-500">Sisa waktu kerja</p>
+                        <span class="ml-auto text-xs font-bold text-gray-700" x-text="remainingTimeLabel"></span>
+                    </div>
+                </div>
+            </template>
+
+            {{-- Attendance History for selected date --}}
+            <template x-if="getHistoryForSelectedDate()">
+                <div class="bg-green-50 border border-green-200 rounded-2xl p-4 animate-fadeIn">
+                    <div class="flex justify-between items-center mb-3">
+                        <p class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Riwayat Absensi</p>
+                        <span class="text-[10px] bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-bold"
+                              x-text="getHistoryForSelectedDate().status"></span>
+                    </div>
+                    <div class="flex gap-8">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase font-bold">Check In</p>
+                            <p class="font-black text-lg text-gray-800" x-text="getHistoryForSelectedDate().check_in"></p>
+                        </div>
+                        <div class="border-l border-green-200 pl-8">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold">Check Out</p>
+                            <p class="font-black text-lg text-gray-800" x-text="getHistoryForSelectedDate().check_out || '--:--'"></p>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            {{-- Lokasi Kerja --}}
+            @if($setting)
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4">
+                <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6a4 4 0 11-8 0 4 4 0 018 0zM12 12v9"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wide">LOKASI KERJA</p>
+                    <p class="text-sm font-bold text-gray-800">{{ $setting?->latitude }}, {{ $setting?->longitude }}</p>
+                </div>
+            </div>
+            @endif
+
+            {{-- Total Jam Kerja --}}
+            @if($setting)
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4">
+                <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                        <path stroke-linecap="round" stroke-width="2" d="M12 6v6l4 2"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wide">TOTAL JAM KERJA</p>
+                    @php
+                        $start = \Carbon\Carbon::parse($setting->start_time);
+                        $end   = \Carbon\Carbon::parse($setting->quit_time);
+                        $totalMinutes = $start->diffInMinutes($end);
+                        $diffH = (int) floor($totalMinutes / 60);
+                        $diffM = $totalMinutes % 60;
+                    @endphp
+                    <p class="text-base font-black text-gray-800">{{ $diffH }} jam {{ $diffM }} menit</p>
+                </div>
+            </div>
+            @endif
+
+            {{-- Off day message --}}
+            <template x-if="!isWorkDaySelected() && !getHistoryForSelectedDate()">
+                <div class="text-center p-8 border-2 border-dashed border-gray-200 rounded-3xl bg-white">
+                    <div class="text-3xl mb-2">🌿</div>
+                    <p class="text-gray-400 text-sm font-semibold">Hari Libur Mingguan</p>
+                    <p class="text-gray-300 text-xs mt-1">Nikmati waktu istirahat Anda</p>
+                </div>
+            </template>
+
         </div>
     </div>
 
     <script>
-        function calendarApp() {
+        function scheduleApp() {
             return {
-                month: '',
-                year: '',
-                no_of_days: [],
-                blankdays: [],
-                // Default ke hari ini
+                // Selected date state
                 selectedDate: new Date().getDate(),
                 selectedMonth: new Date().getMonth(),
                 selectedYear: new Date().getFullYear(),
-                
-                monthNames: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
-                dayNames: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
-                
-                // Data dari Backend
-                workSchedules: @json(Auth::user()->workSchedule ?? []),
+
+                // Week offset from current week (0 = this week)
+                weekOffset: 0,
+
+                // Current week days array
+                weekDays: [],
+
+                monthNamesID: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'],
+                dayNamesID:   ['Min','Sen','Sel','Rab','Kam','Jum','Sab'],
+                dayNamesFullID: ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'],
+
+                // Data from backend
+                workSchedules: @json($workSchedule),
                 attendanceHistory: @json($history ?? []),
 
+                // Work time from setting
+                startTimeStr: '{{ $setting ? date('H:i', strtotime($setting->start_time)) : '08:00' }}',
+                quitTimeStr:  '{{ $setting ? date('H:i', strtotime($setting->quit_time)) : '17:00' }}',
+
                 init() {
-                    let today = new Date();
-                    this.month = today.getMonth();
-                    this.year = today.getFullYear();
-                    this.getNoOfDays();
+                    this.buildWeek();
                 },
 
-                get selectedDateFormatted() {
-                    return this.selectedDate + ' ' + this.monthNames[this.selectedMonth] + ' ' + this.selectedYear;
+                buildWeek() {
+                    const today = new Date();
+                    // Start from Monday of current week + offset
+                    const dayOfWeek = today.getDay(); // 0=Sun
+                    const diffToMon = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
+                    const monday = new Date(today);
+                    monday.setDate(today.getDate() + diffToMon + (this.weekOffset * 7));
+
+                    this.weekDays = [];
+                    for (let i = 0; i < 7; i++) {
+                        const d = new Date(monday);
+                        d.setDate(monday.getDate() + i);
+                        this.weekDays.push({
+                            date:      d.getDate(),
+                            month:     d.getMonth(),
+                            year:      d.getFullYear(),
+                            shortName: this.dayNamesID[d.getDay()].toUpperCase(),
+                            fullName:  this.dayNamesFullID[d.getDay()],
+                        });
+                    }
                 },
 
-                get selectedDayName() {
-                    let d = new Date(this.selectedYear, this.selectedMonth, this.selectedDate);
-                    return this.dayNames[d.getDay()];
+                get weekRangeLabel() {
+                    if (this.weekDays.length === 0) return '';
+                    const first = this.weekDays[0];
+                    const last  = this.weekDays[6];
+                    return `${first.date} – ${last.date} ${this.monthNamesID[last.month]} ${last.year}`;
                 },
 
-                isWorkDaySelected() {
-                    return this.workSchedules.includes(this.selectedDayName);
+                get headerDateLabel() {
+                    const d = new Date(this.selectedYear, this.selectedMonth, this.selectedDate);
+                    const dayShort = this.dayNamesFullID[d.getDay()].substring(0, 3);
+                    return `${dayShort}, ${this.selectedDate} ${this.monthNamesID[this.selectedMonth]} ${this.selectedYear}`;
+                },
+
+                get selectedDayLabel() {
+                    const d = new Date(this.selectedYear, this.selectedMonth, this.selectedDate);
+                    return this.dayNamesFullID[d.getDay()];
+                },
+
+                selectDay(day) {
+                    this.selectedDate  = day.date;
+                    this.selectedMonth = day.month;
+                    this.selectedYear  = day.year;
+                },
+
+                isSelectedDay(day) {
+                    return day.date === this.selectedDate &&
+                           day.month === this.selectedMonth &&
+                           day.year  === this.selectedYear;
                 },
 
                 isTodaySelected() {
-                    const today = new Date();
-                    return today.getDate() === this.selectedDate && 
-                           today.getMonth() === this.selectedMonth && 
-                           today.getFullYear() === this.selectedYear;
+                    const t = new Date();
+                    return t.getDate() === this.selectedDate &&
+                           t.getMonth() === this.selectedMonth &&
+                           t.getFullYear() === this.selectedYear;
                 },
 
-                hasHistory(date) {
-                    let dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                isWorkDaySelected() {
+                    const d = new Date(this.selectedYear, this.selectedMonth, this.selectedDate);
+                    return this.workSchedules.includes(this.dayNamesFullID[d.getDay()]);
+                },
+
+                hasHistory(day) {
+                    const dateStr = `${day.year}-${String(day.month + 1).padStart(2,'0')}-${String(day.date).padStart(2,'0')}`;
                     return this.attendanceHistory.some(h => h.date === dateStr);
                 },
 
                 getHistoryForSelectedDate() {
-                    let dateStr = `${this.selectedYear}-${String(this.selectedMonth + 1).padStart(2, '0')}-${String(this.selectedDate).padStart(2, '0')}`;
+                    const dateStr = `${this.selectedYear}-${String(this.selectedMonth + 1).padStart(2,'0')}-${String(this.selectedDate).padStart(2,'0')}`;
                     return this.attendanceHistory.find(h => h.date === dateStr);
                 },
 
-                selectDate(date) {
-                    this.selectedDate = date;
-                    this.selectedMonth = this.month;
-                    this.selectedYear = this.year;
+                get workProgress() {
+                    const now   = new Date();
+                    const start = this._parseTime(this.startTimeStr);
+                    const end   = this._parseTime(this.quitTimeStr);
+                    const total = end - start;
+                    if (total <= 0) return 0;
+                    const elapsed = now - start;
+                    if (elapsed <= 0) return 0;
+                    if (elapsed >= total) return 100;
+                    return Math.round((elapsed / total) * 100);
                 },
 
-                isSelected(date) {
-                    return this.selectedDate === date && this.selectedMonth === this.month && this.selectedYear === this.year;
+                get remainingTimeLabel() {
+                    const now = new Date();
+                    const end = this._parseTime(this.quitTimeStr);
+                    const diff = end - now;
+                    if (diff <= 0) return '0j 0m';
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    return `${h}j ${m}m`;
                 },
 
-                isToday(date) {
-                    const today = new Date();
-                    return today.getDate() === date && today.getMonth() === this.month && today.getFullYear() === this.year;
+                _parseTime(str) {
+                    const [h, m] = str.split(':').map(Number);
+                    const d = new Date();
+                    d.setHours(h, m, 0, 0);
+                    return d;
                 },
 
-                getNoOfDays() {
-                    let daysInMonth = new Date(this.year, this.month + 1, 0).getDate();
-                    let dayOfWeek = new Date(this.year, this.month, 1).getDay();
-                    let blankdaysArray = [];
-                    for (var i = 1; i <= dayOfWeek; i++) { blankdaysArray.push(i); }
-                    let daysArray = [];
-                    for (var i = 1; i <= daysInMonth; i++) { daysArray.push(i); }
-                    this.blankdays = blankdaysArray;
-                    this.no_of_days = daysArray;
-                },
-
-                prevMonth() {
-                    if (this.month === 0) { this.month = 11; this.year--; } else { this.month--; }
-                    this.getNoOfDays();
-                },
-
-                nextMonth() {
-                    if (this.month === 11) { this.month = 0; this.year++; } else { this.month++; }
-                    this.getNoOfDays();
-                }
+                prevWeek() { this.weekOffset--; this.buildWeek(); },
+                nextWeek() { this.weekOffset++; this.buildWeek(); },
             }
         }
     </script>
@@ -221,8 +357,8 @@
             animation: fadeIn 0.3s ease-in-out;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
     </style>
 </x-app-layout>

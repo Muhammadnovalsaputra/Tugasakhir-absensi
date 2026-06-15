@@ -17,7 +17,7 @@
                             <p class="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1">{{ Auth::user()->role }}</p>
                         </div>
                         
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-black border border-blue-100 overflow-hidden">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mt-2 text-blue-600 font-black border border-blue-100 overflow-hidden">
                             @if(Auth::user()->photo)
                                 <img src="{{ asset('storage/'. Auth::user()->photo) }}" class="w-full h-full object-cover">
                             @else

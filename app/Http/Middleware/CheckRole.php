@@ -8,18 +8,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckRole
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
-    public function handle(Request $request, Closure $next, string $role): Response
-{
-    // Sekarang variabel $role sudah dikenali karena diambil dari parameter fungsi
-    if (!$request->user() || $request->user()->role !== $role) {
-        abort(403, 'Anda tidak memiliki akses ke halaman ini.');
-    }
+    public function handle(Request $request, Closure $next, ...$roles): Response
+    {
+        if (!in_array($request->user()->role, $roles)) {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini. Role yang diizinkan: ' . implode(', ', array_map('strtoupper', $roles)));
+        }
 
-    return $next($request);
-}
+        return $next($request);
+    }
 }

@@ -32,9 +32,9 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Cuti</label>
                             <select name="leave_type" required class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:ring-blue-500">
-                                <option value="Cuti Tahunan" {{ $leave->leave_type == 'Cuti Tahunan' ? 'selected' : '' }}>Cuti Tahunan</option>
-                                <option value="Cuti Sakit" {{ $leave->leave_type == 'Cuti Sakit' ? 'selected' : '' }}>Cuti Sakit</option>
-                                <option value="Izin Mendesak" {{ $leave->leave_type == 'Izin Mendesak' ? 'selected' : '' }}>Izin Mendesak</option>
+                                <option value="CutiTahunan" {{ $leave->leave_type == 'CutiTahunan' ? 'selected' : '' }}>Cuti Tahunan</option>
+                                <option value="CutiSakit"   {{ $leave->leave_type == 'CutiSakit'   ? 'selected' : '' }}>Cuti Sakit</option>
+                                <option value="IzinMendesak"{{ $leave->leave_type == 'IzinMendesak'? 'selected' : '' }}>Izin Mendesak</option>
                             </select>
                         </div>
                         

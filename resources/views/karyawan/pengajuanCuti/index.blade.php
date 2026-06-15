@@ -1,4 +1,14 @@
 <x-app-layout>
+
+@if($errors->any())
+    <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-2xl">
+        <ul>
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
     <div class="bg-blue-900 text-white p-6 pb-20 rounded-b-[3rem] shadow-lg">
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div>
@@ -14,6 +24,15 @@
     </div>
 
     <div class="py-6 px-4 -mt-16 mb-24 max-w-md mx-auto">
+        @if($errors->any())
+        <div class="mb-4 p-3 bg-red-100 border border-red-200 text-red-700 rounded-2xl text-sm font-bold">
+            <ul class="list-disc list-inside">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
 
         {{-- ✅ Alert Sukses --}}
         @if(session('success'))

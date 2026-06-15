@@ -8,15 +8,50 @@
             </a>
             <h2 class="text-xl font-bold text-gray-800">Riwayat Absensi</h2>
         </div>
+
+        {{-- Filter Date Range --}}
+        <form method="GET" action="{{ request()->url() }}" class="px-6 py-3 space-y-3">
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <label class="text-[10px] text-gray-400 uppercase font-bold tracking-wide">Dari</label>
+                    <input type="date" name="start_date" value="{{ $startDate }}"
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 mt-1">
+                </div>
+                <div class="flex-1">
+                    <label class="text-[10px] text-gray-400 uppercase font-bold tracking-wide">Sampai</label>
+                    <input type="date" name="end_date" value="{{ $endDate }}"
+                        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100 mt-1">
+                </div>
+            </div>
+            <button type="submit"
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-xl transition">
+                Tampilkan
+            </button>
+        </form>
+
+        {{-- Label Periode --}}
+        <div class="px-6 pb-2">
+            <p class="text-xs text-gray-400">
+                Periode:
+                <span class="font-semibold text-gray-600">
+                    {{ \Carbon\Carbon::parse($startDate)->translatedFormat('d F Y') }}
+                </span>
+                —
+                <span class="font-semibold text-gray-600">
+                    {{ \Carbon\Carbon::parse($endDate)->translatedFormat('d F Y') }}
+                </span>
+            </p>
+        </div>
+
         <div class="divide-y divide-gray-100">
             @forelse($attendances as $item)
             <div class="px-6 py-5">
-                <!-- Baris Tanggal -->
+                {{-- Tanggal --}}
                 <div class="text-gray-400 text-sm mb-3">
                     {{ \Carbon\Carbon::parse($item->date)->translatedFormat('l, d F Y') }}
                 </div>
 
-                <!-- Baris Masuk -->
+                {{-- Masuk --}}
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-3">
                         <div class="text-green-500">
@@ -31,7 +66,7 @@
                     </div>
                 </div>
 
-                <!-- Baris Pulang -->
+                {{-- Pulang --}}
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="text-orange-400">

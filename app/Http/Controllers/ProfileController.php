@@ -47,24 +47,18 @@ class ProfileController extends Controller
     {
         $user = $request->user();
     
-    // Ambil data yang sudah divalidasi
+    
     $validatedData = $request->validated();
 
-    // Cek apakah ada file foto yang diunggah
     if ($request->hasFile('photo')) {
-        // 1. Hapus foto lama dari storage jika ada (agar tidak memenuhi server)
         if ($user->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->photo)) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($user->photo);
         }
 
-        // 2. Simpan foto baru ke folder 'profile-photos' di disk public
+    
         $path = $request->file('photo')->store('photos', 'public');
-        
-        // 3. Masukkan path foto ke dalam array data untuk disimpan ke DB
         $validatedData['photo'] = $path;
         }
-
-    // Isi data user dengan data yang sudah divalidasi (termasuk path foto jika ada)
         $user->fill($validatedData);
 
         if ($user->isDirty('email')) {
