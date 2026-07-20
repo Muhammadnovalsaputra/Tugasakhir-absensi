@@ -6,8 +6,10 @@ use App\Http\Requests\LeavePermitRequest;
 use App\Http\Requests\LeaveStatusUpdateRequest;
 use App\Services\LeavePermitService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request; 
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use App\Models\LeavePermit; 
 
 class LeavePermitController extends Controller
 {
@@ -17,11 +19,12 @@ class LeavePermitController extends Controller
         
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $user = auth()->user();
+         $user = auth()->user();
+
         $data = $this->leavePermitService->getUserLeaveDashboard($user);
-        
+
         return view('karyawan.pengajuanCuti.index', $data);
     }
 
@@ -85,12 +88,14 @@ class LeavePermitController extends Controller
         }
     }
 
-    public function adminIndex(): View
+    public function adminIndex(Request $request): View
     {
-        $allLeaves = $this->leavePermitService->getAllLeaveRequests();
+       $search = $request->query('search');
+
+        $allLeaves = $this->leavePermitService->getAllLeaveRequests($search);
         $stats = $this->leavePermitService->getLeaveStatistics();
-        
-        return view('pimpinan.pengajuanCuti.index', compact('allLeaves', 'stats'));
+
+        return view('pimpinan.pengajuanCuti.index', compact('allLeaves', 'stats', 'search'));
     }
 
     public function updateStatus(LeaveStatusUpdateRequest $request, int $id): RedirectResponse

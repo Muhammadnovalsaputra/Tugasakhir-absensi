@@ -25,9 +25,17 @@ class AttendanceController extends Controller
 
     public function index(): View
     {
+        $data       = $this->attendanceService->getIndexData();
+        $attendance = $data['attendance'];
+
+        $state = ($attendance && in_array($attendance->status, ['Cuti', 'Izin']))
+            ? 'on_leave'
+            : $this->correctionService->getTodayState(Auth::id());
+
         return view('karyawan.index', [
-            ...$this->attendanceService->getIndexData(),
-            'state' => $this->correctionService->getTodayState(Auth::id()),
+            ...$data,
+            'state'      => $state,
+            'correction' => $this->correctionService->getTodayCorrection(Auth::id()),
         ]);
     }
 
@@ -64,10 +72,13 @@ class AttendanceController extends Controller
     public function leaderIndex(Request $request): View
     {
         $attendances = $this->attendanceService->getFilteredAttendances($request->only(
-            'search', 'status', 'start_date', 'end_date'
-        ));
-
-        return view('pimpinan.rekapAbsensi.index', compact('attendances'));
+        'search', 'status', 'start_date', 'end_date'
+    ));
+    if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        return view('pimpinan.rekapAbsensi.partials.table', compact('attendances'));
+    }
+ 
+    return view('pimpinan.rekapAbsensi.index', compact('attendances'));
     }
 
     public function exportExcel(Request $request)

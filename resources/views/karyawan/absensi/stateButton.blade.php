@@ -55,22 +55,25 @@
             Absen Pulang
         </button>
         @break
+        
+        @case('can_checkout_after_correction')
+            <div class="bg-green-50 border border-green-200 rounded-2xl p-3 mb-3 text-sm text-green-700">
+                <strong>Koreksi absensi Anda disetujui!</strong><br>
+                <span class="text-xs">Jam masuk tercatat:
+                    <strong>{{ $attendance?->check_in ? \Carbon\Carbon::parse($attendance->check_in)->format('H:i') : '--:--' }}</strong>
+                </span>
+                @if($correction?->reviewer_note)
+                    <br>
+                    <span class="text-sm">Catatan: <strong>{{ $correction->reviewer_note }}</strong></span>
+                @endif
+            </div>
 
-    
-    @case('can_checkout_after_correction')
-        <div class="bg-green-50 border border-green-200 rounded-2xl p-3 mb-3 text-sm text-green-700">
-            <strong>Koreksi absensi Anda disetujui!</strong><br>
-            <span class="text-xs">Jam masuk tercatat:
-                <strong>{{ $attendance?->check_in ? \Carbon\Carbon::parse($attendance->check_in)->format('H:i') : '--:--' }}</strong>
-            </span>
-        </div>
-
-        <button type="button"
-                onclick="handleCheckout()"
-                class="w-full py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-sm shadow-md transition">
-            🏠 Absen Pulang
-        </button>
-        @break
+    <button type="button"
+            onclick="handleCheckout()"
+            class="w-full py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-sm shadow-md transition">
+        🏠 Absen Pulang
+    </button>
+    @break
 
     @case('show_correction')
         <div class="bg-yellow-50 border border-yellow-300 rounded-2xl p-3 mb-3 text-sm text-yellow-800">
@@ -111,6 +114,14 @@
             </div>
         </div>
         @break
+    @case('on_leave')
+    <div class="bg-purple-50 border border-purple-200 rounded-2xl p-3 text-sm text-purple-700">
+        🌴 <strong>Anda sedang {{ $attendance->status }} hari ini.</strong>
+        <div class="mt-2 text-xs text-purple-500">
+            Absen masuk/pulang dinonaktifkan selama masa cuti/izin.
+        </div>
+    </div>
+    @break
 
 @endswitch
 

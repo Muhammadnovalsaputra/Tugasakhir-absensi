@@ -26,6 +26,7 @@
                 <th>Jam Masuk</th>
                 <th>Jam Keluar</th>
                 <th>Status</th>
+                <th>Lokasi</th>
             </tr>
         </thead>
         <tbody>
@@ -37,6 +38,7 @@
                 <td>{{ $item->check_in  ?? '-' }}</td>
                 <td>{{ $item->check_out ?? '-' }}</td>
                 <td>{{ $item->status    ?? '-' }}</td>
+                <td>{{ $item->latitude_in ?? '-' }} {{ $item->longitude_in ?? '-' }}</td>
             </tr>
             @empty
             <tr>

@@ -14,9 +14,6 @@ class AttendanceSettingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'latitude'        => 'required|numeric',
-            'longitude'       => 'required|numeric',
-            'radius'          => 'required|numeric|min:10',
             'start_time'      => 'required|date_format:H:i',
             'quit_time'       => 'required|date_format:H:i|after:start_time',
             'work_schedule'   => 'required|array|min:1',

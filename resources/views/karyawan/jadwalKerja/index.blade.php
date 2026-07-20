@@ -54,7 +54,11 @@
                                 }"
                                 x-text="day.date"></button>
                         <div class="w-1.5 h-1.5 rounded-full transition-colors"
-                             :class="hasHistory(day) ? 'bg-purple-500' : 'bg-transparent'"></div>
+                             :class="{
+                                'bg-orange-400': dayStatus(day) === 'Cuti' || dayStatus(day) === 'Izin',
+                                'bg-purple-500': hasHistory(day) && dayStatus(day) !== 'Cuti' && dayStatus(day) !== 'Izin',
+                                'bg-transparent': !hasHistory(day)
+                             }"></div>
                     </div>
                 </template>
             </div>
@@ -72,7 +76,16 @@
                     </svg>
                     <span x-text="isTodaySelected() ? 'Hari Ini' : selectedDayLabel"></span>
                 </span>
-                <template x-if="isWorkDaySelected()">
+
+                {{-- Sedang Cuti / Izin --}}
+                <template x-if="isOnLeaveSelected()">
+                    <span class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 text-purple-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                        🌴 <span x-text="getHistoryForSelectedDate().status"></span>
+                    </span>
+                </template>
+
+                {{-- Shift Pagi (hanya kalau bukan sedang cuti) --}}
+                <template x-if="!isOnLeaveSelected() && isWorkDaySelected()">
                     <span class="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
                         <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <rect x="3" y="7" width="18" height="14" rx="2" stroke-width="2"/>
@@ -81,7 +94,9 @@
                         Shift Pagi
                     </span>
                 </template>
-                <template x-if="!isWorkDaySelected()">
+
+                {{-- Hari Libur (hanya kalau bukan sedang cuti) --}}
+                <template x-if="!isOnLeaveSelected() && !isWorkDaySelected()">
                     <span class="flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
                         Hari Libur
                     </span>
@@ -98,7 +113,7 @@
                         <p class="text-[10px] font-bold text-green-600 uppercase tracking-wide">JAM MASUK</p>
                     </div>
                     <p class="text-3xl font-black text-green-500 leading-none tracking-tight"
-                       x-text="isWorkDaySelected() ? '{{ $setting ? date('H:i', strtotime($setting->start_time)) : '--:--' }}' : '--:--'"></p>
+                       x-text="(isWorkDaySelected() && !isOnLeaveSelected()) ? '{{ $setting ? date('H:i', strtotime($setting->start_time)) : '--:--' }}' : '--:--'"></p>
                     <p class="text-[10px] text-green-400 mt-1 font-semibold">WIB</p>
                 </div>
                 <div class="bg-red-50 border border-red-100 rounded-2xl p-4">
@@ -109,13 +124,13 @@
                         <p class="text-[10px] font-bold text-red-400 uppercase tracking-wide">JAM PULANG</p>
                     </div>
                     <p class="text-3xl font-black text-red-400 leading-none tracking-tight"
-                       x-text="isWorkDaySelected() ? '{{ $setting ? date('H:i', strtotime($setting->quit_time)) : '--:--' }}' : '--:--'"></p>
+                       x-text="(isWorkDaySelected() && !isOnLeaveSelected()) ? '{{ $setting ? date('H:i', strtotime($setting->quit_time)) : '--:--' }}' : '--:--'"></p>
                     <p class="text-[10px] text-red-300 mt-1 font-semibold">WIB</p>
                 </div>
             </div>
 
             {{-- Progress Jam Kerja --}}
-            <template x-if="isWorkDaySelected() && isTodaySelected()">
+            <template x-if="isWorkDaySelected() && isTodaySelected() && !isOnLeaveSelected()">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center gap-2">
@@ -141,8 +156,17 @@
                 </div>
             </template>
 
-            {{-- Attendance History for selected date --}}
-            <template x-if="getHistoryForSelectedDate()">
+            {{-- Info Cuti / Izin untuk tanggal terpilih --}}
+            <template x-if="isOnLeaveSelected()">
+                <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4 animate-fadeIn text-center">
+                    <div class="text-2xl mb-1">🌴</div>
+                    <p class="text-sm font-bold text-purple-700" x-text="getHistoryForSelectedDate().status"></p>
+                    <p class="text-xs text-purple-400 mt-1">Anda sedang cuti/izin pada tanggal ini</p>
+                </div>
+            </template>
+
+            {{-- Attendance History for selected date (bukan cuti/izin) --}}
+            <template x-if="getHistoryForSelectedDate() && !isOnLeaveSelected()">
                 <div class="bg-green-50 border border-green-200 rounded-2xl p-4 animate-fadeIn">
                     <div class="flex justify-between items-center mb-3">
                         <p class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Riwayat Absensi</p>
@@ -201,7 +225,7 @@
             </div>
             @endif
 
-            {{-- Off day message --}}
+            {{-- Off day message (tidak muncul kalau ada history/cuti di tanggal ini) --}}
             <template x-if="!isWorkDaySelected() && !getHistoryForSelectedDate()">
                 <div class="text-center p-8 border-2 border-dashed border-gray-200 rounded-3xl bg-white">
                     <div class="text-3xl mb-2">🌿</div>
@@ -216,26 +240,25 @@
     <script>
         function scheduleApp() {
             return {
-                // Selected date state
                 selectedDate: new Date().getDate(),
                 selectedMonth: new Date().getMonth(),
                 selectedYear: new Date().getFullYear(),
 
-                // Week offset from current week (0 = this week)
+                
                 weekOffset: 0,
 
-                // Current week days array
+                
                 weekDays: [],
 
                 monthNamesID: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'],
                 dayNamesID:   ['Min','Sen','Sel','Rab','Kam','Jum','Sab'],
                 dayNamesFullID: ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'],
 
-                // Data from backend
+                
                 workSchedules: @json($workSchedule),
                 attendanceHistory: @json($history ?? []),
 
-                // Work time from setting
+                
                 startTimeStr: '{{ $setting ? date('H:i', strtotime($setting->start_time)) : '08:00' }}',
                 quitTimeStr:  '{{ $setting ? date('H:i', strtotime($setting->quit_time)) : '17:00' }}',
 
@@ -245,8 +268,7 @@
 
                 buildWeek() {
                     const today = new Date();
-                    // Start from Monday of current week + offset
-                    const dayOfWeek = today.getDay(); // 0=Sun
+                    const dayOfWeek = today.getDay(); 
                     const diffToMon = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
                     const monday = new Date(today);
                     monday.setDate(today.getDate() + diffToMon + (this.weekOffset * 7));
@@ -311,10 +333,19 @@
                     const dateStr = `${day.year}-${String(day.month + 1).padStart(2,'0')}-${String(day.date).padStart(2,'0')}`;
                     return this.attendanceHistory.some(h => h.date === dateStr);
                 },
+                dayStatus(day) {
+                    const dateStr = `${day.year}-${String(day.month + 1).padStart(2,'0')}-${String(day.date).padStart(2,'0')}`;
+                    const h = this.attendanceHistory.find(x => x.date === dateStr);
+                    return h ? h.status : null;
+                },
 
                 getHistoryForSelectedDate() {
                     const dateStr = `${this.selectedYear}-${String(this.selectedMonth + 1).padStart(2,'0')}-${String(this.selectedDate).padStart(2,'0')}`;
                     return this.attendanceHistory.find(h => h.date === dateStr);
+                },
+                isOnLeaveSelected() {
+                    const h = this.getHistoryForSelectedDate();
+                    return !!h && (h.status === 'Cuti' || h.status === 'Izin');
                 },
 
                 get workProgress() {

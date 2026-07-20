@@ -11,6 +11,7 @@ use App\Models\KoreksiAbsen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class AttendanceCorrectionController extends Controller
 {
@@ -27,7 +28,7 @@ class AttendanceCorrectionController extends Controller
     {
         $state = $this->correctionService->getTodayState(Auth::id());
 
-        // Hanya boleh akses jika state memang 'show_correction'
+        
         if ($state !== 'show_correction') {
             return redirect()->route('dashboard')
             ->with('error', 'Anda tidak dapat mengajukan koreksi saat ini.');
@@ -38,9 +39,6 @@ class AttendanceCorrectionController extends Controller
         ]);
     }
 
-    /**
-     * Proses submit pengajuan koreksi dari karyawan.
-     */
     public function store(StoreCorrectionRequest $request): RedirectResponse
     {
         $result = $this->correctionService->submitCorrection(
@@ -56,27 +54,31 @@ class AttendanceCorrectionController extends Controller
     // ─── Pimpinan / Admin ─────────────────────────────────────────
 
    
-    public function leaderIndex(Request $request): View
+    public function leaderIndex(Request $request): View|JsonResponse
     {
-        $corrections = AttendanceCorrection::with(['user', 'reviewer'])
-            ->when(
-                $request->filled('status'),
-                fn($q) => $q->where('status', $request->status)
+        $query = AttendanceCorrection::with(['user', 'reviewer'])
+        ->when(
+            $request->filled('status'),
+            fn($q) => $q->where('status', $request->status)
+        )
+        ->when(
+            $request->filled('search'),
+            fn($q) => $q->whereHas('user', fn($u) =>
+                $u->where('name', 'like', '%' . $request->search . '%')
             )
-            ->when(
-                $request->filled('search'),
-                fn($q) => $q->whereHas('user', fn($u) =>
-                    $u->where('name', 'like', '%' . $request->search . '%')
-                )
-            )
-            ->orderByRaw("FIELD(status, 'Pending', 'Approved', 'Rejected')")
-            ->orderBy('date', 'desc')
-            ->paginate(10)
-            ->withQueryString();
+        )
+        
+        ->orderBy('created_at', 'desc'); 
+    if ($request->wantsJson()) {
+        $corrections = $query->paginate(10)->withQueryString();
+        return response()->json($corrections);
+    }
 
-        $pendingCount = AttendanceCorrection::pending()->count();
+    
+    $corrections = $query->paginate(10)->withQueryString();
+    $pendingCount = AttendanceCorrection::pending()->count();
 
-        return view('pimpinan.koreksiAbsen.index', compact('corrections', 'pendingCount'));
+    return view('pimpinan.koreksiAbsen.index', compact('corrections', 'pendingCount'));
     }
 
     /**

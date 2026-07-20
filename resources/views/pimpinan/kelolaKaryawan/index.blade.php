@@ -52,6 +52,18 @@
                 </div>
             @endif
 
+           <div class="mb-6 w-full"> {{-- Mengubah max-w-md menjadi w-full --}}
+                <div class="relative shadow-sm rounded-xl">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="Cari nama atau email karyawan..." 
+                        class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl font-medium text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition outline-none">
+                </div>
+            </div>
+
             {{-- DATATABLE CARD --}}
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="overflow-x-auto">
@@ -65,8 +77,8 @@
                                 <th class="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 font-medium text-sm text-slate-700">
-                            @foreach($employees as $k)
+                        <tbody id="employeeTableBody" class="divide-y divide-slate-100 font-medium text-sm text-slate-700">
+                            @forelse($employees as $k)
                             <tr class="hover:bg-slate-50/40 transition duration-150">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3.5">
@@ -118,10 +130,39 @@
                                     </div>
                                 </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-16 text-center">
+                                    <div class="flex flex-col items-center max-w-sm mx-auto">
+                                        <div class="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-400 mb-3 shadow-inner">
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                            </svg>
+                                        </div>
+                                        <h4 class="text-slate-700 font-bold tracking-wide">Belum Ada Karyawan</h4>
+                                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Klik "Tambah Karyawan" untuk mulai menambahkan data tim.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
+                    
                 </div>
+
+                {{-- PAGINATION --}}
+                @if ($employees->hasPages())
+                <div id="paginationContainer" class="px-6 py-4 bg-slate-50/80 border-t border-slate-100">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-xs font-semibold text-slate-500 tracking-wide">
+                            Menampilkan <span class="text-slate-800 font-bold">{{ $employees->firstItem() }}</span> sampai <span class="text-slate-800 font-bold">{{ $employees->lastItem() }}</span> dari <span class="text-indigo-600 font-extrabold">{{ $employees->total() }}</span> total karyawan
+                        </p>
+                        <div class="w-full sm:w-auto">
+                            {{ $employees->links() }}
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -145,7 +186,7 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 ml-0.5">Nama Lengkap</label>
-                        <input type="text" name="name" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition outline-none" placeholder="Contoh: Ahmad Rizki">
+                        <input type="text" name="name" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition outline-none" placeholder="Nama Lengkap">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 ml-0.5">Email (Akun Login)</label>
@@ -257,11 +298,10 @@
     </div>
 </div>
 
-{{-- SCRIPT MANAGEMENT --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // SweetAlert2 Konfirmasi Hapus Data Karyawan
+    
     function confirmDelete(button) {
         const form = button.closest('.form-delete');
         
@@ -270,8 +310,8 @@
             text: 'Seluruh riwayat tugas, login absensi, dan data profil karyawan terkait akan dihapus permanen dari basis data perusahaan.',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#e11d48', // rose-600
-            cancelButtonColor: '#f1f5f9',  // slate-100
+            confirmButtonColor: '#e11d48', 
+            cancelButtonColor: '#f1f5f9',  
             confirmButtonText: 'Ya, Hapus',
             cancelButtonText: 'Batalkan',
             reverseButtons: true,
@@ -288,7 +328,6 @@
         });
     }
 
-    // Auto fade-out alert/session flash message
     setTimeout(function() {
         ['success-message', 'error-message'].forEach(id => {
             const element = document.getElementById(id);
@@ -301,7 +340,6 @@
         });
     }, 4000);
 
-    // Modal Create Handlers
     function openModal() {
         document.getElementById('modalKaryawan').classList.remove('hidden');
         document.body.style.overflow = 'hidden'; 
@@ -312,7 +350,7 @@
         document.body.style.overflow = 'auto';    
     }
 
-    // Modal Edit Handlers & Data Injection
+    
     function openEditModal(user) {
         const form = document.getElementById('editFormKaryawan');
         let updateUrl = "{{ route('pimpinan.kelolaKaryawan.update', ':id') }}";
@@ -342,7 +380,7 @@
         document.getElementById('edit_password').value = '';
     }
 
-    // Live Preview Image Handler untuk Modal Tambah & Edit
+    
     function setupImagePreview(inputId, containerId, isAvatar = false) {
         document.getElementById(inputId)?.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -364,4 +402,173 @@
 
     setupImagePreview('create_photo_input', 'create_photo_preview_container', true);
     setupImagePreview('edit_photo', 'current_photo_container', false);
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('employeeTableBody');
+    const paginationContainer = document.getElementById('paginationContainer');
+    
+    let debounceTimer;
+
+    // Event listener saat user mengetik
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        
+        // Menunggu user selesai mengetik selama 300ms
+        debounceTimer = setTimeout(() => {
+            fetchEmployees(this.value);
+        }, 300);
+    });
+
+    // Fungsi untuk mengambil data via Fetch API
+    function fetchEmployees(keyword = '', url = null) {
+        // Jika url tidak ditentukan, gunakan current URL + query parameter
+        let fetchUrl = url ? url : `${window.location.pathname}?search=${encodeURIComponent(keyword)}`;
+
+        fetch(fetchUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            renderTable(data.data);
+            renderPagination(data);
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    }
+
+    // Fungsi render ulang baris tabel
+    function renderTable(employees) {
+        tableBody.innerHTML = '';
+
+        if (employees.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-6 py-16 text-center">
+                        <div class="flex flex-col items-center max-w-sm mx-auto">
+                            <div class="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-400 mb-3 shadow-inner">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                </svg>
+                            </div>
+                            <h4 class="text-slate-700 font-bold tracking-wide">Karyawan Tidak Ditemukan</h4>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Tidak ada hasil yang cocok dengan kata kunci pencarian Anda.</p>
+                        </div>
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        employees.forEach(k => {
+            // Logika warna badge Role
+            let colorClasses = '';
+            switch(k.role) {
+                case 'Pimpinan': colorClasses = 'bg-purple-50 text-purple-600 border-purple-100'; break;
+                case 'Admin': colorClasses = 'bg-indigo-50 text-indigo-600 border-indigo-100'; break;
+                case 'Finance': colorClasses = 'bg-emerald-50 text-emerald-600 border-emerald-100'; break;
+                case 'KetuaTeknisi':
+                case 'Teknisi': colorClasses = 'bg-blue-50 text-blue-600 border-blue-100'; break;
+                case 'Sekretaris': colorClasses = 'bg-amber-50 text-amber-600 border-amber-100'; break;
+                default: colorClasses = 'bg-slate-50 text-slate-600 border-slate-100';
+            }
+
+            let roleName = k.role === 'KetuaTeknisi' ? 'Ketua Teknisi' : k.role;
+            let photoUrl = k.photo ? `/storage/${k.photo}` : `https://ui-avatars.com/api/?background=EEF2FF&color=4F46E5&bold=true&name=${encodeURIComponent(k.name)}`;
+            
+            // Format Tanggal (Sederhana)
+            let date = new Date(k.created_at);
+            let formattedDate = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+            // Stringify user object untuk fungsi edit modal safely
+            let userJson = JSON.stringify(k).replace(/'/g, "&apos;");
+
+            let tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/40 transition duration-150";
+            tr.innerHTML = `
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-full border border-slate-100 overflow-hidden bg-slate-50 flex-shrink-0">
+                            <img src="${photoUrl}" class="w-full h-full object-cover">
+                        </div>
+                        <span class="font-bold text-slate-800 tracking-tight">${k.name}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-slate-500 font-normal">${k.email}</td>
+                <td class="px-6 py-4">
+                    <span class="px-2.5 py-1 text-[11px] font-bold rounded-md border uppercase tracking-wider ${colorClasses}">
+                        ${roleName}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-slate-400 text-xs font-normal">${formattedDate}</td>
+                <td class="px-6 py-4 text-center">
+                    <div class="flex items-center justify-center gap-2.5">
+                        <button onclick='openEditModal(${userJson})' class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition duration-200" title="Edit Data">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                            </svg>
+                        </button>
+                        <form action="/pimpinan/kelolaKaryawan/${k.id}" method="POST" class="form-delete inline-block">
+                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.content || ''}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="button" onclick="confirmDelete(this)" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition duration-200" title="Hapus Karyawan">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // Memperbarui pagination text & link secara asinkronus
+    function renderPagination(data) {
+        if (!data.links || data.total <= data.per_page) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+
+        let linksHtml = '';
+        // Membangun ulang struktur link pagination bawaan Tailwind Laravel (sederhana)
+        data.links.forEach(link => {
+            let activeClass = link.active 
+                ? 'bg-indigo-600 text-white border-indigo-600' 
+                : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200';
+            let disabledAttr = link.url ? '' : 'disabled';
+            
+            linksHtml += `
+                <button ${disabledAttr} data-url="${link.url}" class="pagination-link px-3 py-1.5 border text-xs font-bold rounded-lg transition ${activeClass} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}">
+                    ${link.label}
+                </button>
+            `;
+        });
+
+        paginationContainer.innerHTML = `
+            <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-xs font-semibold text-slate-500 tracking-wide">
+                        Menampilkan <span class="text-slate-800 font-bold">${data.from || 0}</span> sampai <span class="text-slate-800 font-bold">${data.to || 0}</span> dari <span class="text-indigo-600 font-extrabold">${data.total}</span> total karyawan
+                    </p>
+                    <div class="w-full sm:w-auto flex items-center justify-center gap-1">
+                        ${linksHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Daftarkan kembali event click untuk link pagination baru
+        document.querySelectorAll('.pagination-link').forEach(button => {
+            button.addEventListener('click', function () {
+                let url = this.getAttribute('data-url');
+                if (url) fetchEmployees('', url);
+            });
+        });
+    }
+});
+
 </script>

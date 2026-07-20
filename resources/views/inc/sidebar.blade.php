@@ -54,7 +54,30 @@
                   class="text-sm whitespace-nowrap">Dashboard</span>
         </a>
 
-        <a href="{{ route('pimpinan.pengajuanCuti.index') }}"
+         <a href="{{ route('pimpinan.rekapAbsensi.index') }}"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition duration-200
+                  {{ request()->routeIs('pimpinan.rekapAbsensi.*') ? 'bg-white text-blue-600 shadow-md font-semibold' : 'hover:bg-blue-500 text-white' }}"
+           :class="collapsed ? 'justify-center' : ''">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span x-show="!collapsed" x-transition:enter="transition-opacity duration-200 delay-75"
+                  x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                  x-transition:leave="transition-opacity duration-75" x-transition:leave-end="opacity-0"
+                  class="text-sm whitespace-nowrap">Rekap Absensi</span>
+        </a>
+
+       
+
+        
+        <div class="pt-3">
+            <p x-show="!collapsed" class="text-[9px] uppercase font-bold text-blue-200 px-3 pb-1 tracking-widest whitespace-nowrap">
+                Cuti
+            </p>
+        </div>
+
+         <a href="{{ route('pimpinan.pengajuanCuti.index') }}"
            class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition duration-200
                   {{ request()->routeIs('pimpinan.pengajuanCuti.*') ? 'bg-white text-blue-600 shadow-md font-semibold' : 'hover:bg-blue-500 text-white' }}"
            :class="collapsed ? 'justify-center' : ''">
@@ -68,26 +91,7 @@
                   class="text-sm whitespace-nowrap">Pengajuan Cuti</span>
         </a>
 
-        
-        <div class="pt-3">
-            <p x-show="!collapsed" class="text-[9px] uppercase font-bold text-blue-200 px-3 pb-1 tracking-widest whitespace-nowrap">
-                Laporan
-            </p>
-        </div>
-
-        <a href="{{ route('pimpinan.rekapAbsensi.index') }}"
-           class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition duration-200
-                  {{ request()->routeIs('pimpinan.rekapAbsensi.*') ? 'bg-white text-blue-600 shadow-md font-semibold' : 'hover:bg-blue-500 text-white' }}"
-           :class="collapsed ? 'justify-center' : ''">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            <span x-show="!collapsed" x-transition:enter="transition-opacity duration-200 delay-75"
-                  x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                  x-transition:leave="transition-opacity duration-75" x-transition:leave-end="opacity-0"
-                  class="text-sm whitespace-nowrap">Rekap Absensi</span>
-        </a>
+       
 
         <div class="pt-3">
             <p x-show="!collapsed" class="text-[9px] uppercase font-bold text-blue-200 px-3 pb-1 tracking-widest whitespace-nowrap">

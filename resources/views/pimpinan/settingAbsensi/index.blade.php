@@ -38,79 +38,157 @@
             </div>
         </div>
 
-        <form id="form-setting-absensi" action="{{ route('pimpinan.settingAbsensi.update') }}" method="POST">
-            @csrf
-
-            {{-- Section: Titik Koordinat --}}
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                <div class="p-6 bg-blue-50/50 border-b border-gray-100 flex items-center gap-3">
+       
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+            <div class="p-6 bg-blue-50/50 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
                     <div class="bg-blue-600 p-2 rounded-xl text-white">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                     </div>
-                    <h3 class="font-bold text-gray-800 text-lg">Titik Koordinat Kantor</h3>
-                </div>
-
-                <div class="p-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Latitude</label>
-                            <input type="text" name="latitude" id="lat"
-                                   value="{{ old('latitude', $setting->latitude) }}" required
-                                   class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Longitude</label>
-                            <input type="text" name="longitude" id="lng"
-                                   value="{{ old('longitude', $setting->longitude) }}" required
-                                   class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">Batas Radius Absensi (Meter)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.487V6a2 2 0 011.106-1.789l5.447-2.724a2 2 0 011.894 0l5.447 2.724A2 2 0 0118 6v9.487a2 2 0 01-1.106 1.789L11.447 20a2 2 0 01-1.894 0z"/>
-                                    </svg>
-                                </div>
-                                <input type="number" name="radius"
-                                       value="{{ old('radius', $setting->radius ?? 100) }}" min="10"
-                                       class="w-full pl-11 pr-16 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition"
-                                       placeholder="Contoh: 100">
-                                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400 font-bold">
-                                    Meter
-                                </div>
-                            </div>
-                            <p class="text-xs text-gray-400 mt-2">Karyawan hanya bisa absen jika jaraknya kurang dari radius di atas.</p>
-                        </div>
-                    </div>
-
-                    <button type="button" onclick="getLocation()"
-                            class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-50 transition shadow-sm mb-6">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                        </svg>
-                        Gunakan Lokasi Saat Ini
-                    </button>
-
-                    <div class="bg-blue-50 border border-blue-100 p-5 rounded-2xl">
-                        <div class="flex items-center gap-2 text-blue-700 mb-2">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span class="font-bold">Koordinat: <span id="display-coord">{{ $setting->latitude ?? '0' }}, {{ $setting->longitude ?? '0' }}</span></span>
-                        </div>
-                        <a id="gmaps-link"
-                           href="https://www.google.com/maps?q={{ $setting->latitude ?? 0 }},{{ $setting->longitude ?? 0 }}"
-                           target="_blank"
-                           class="text-blue-600 text-sm font-medium hover:underline">
-                            Lihat di Google Maps →
-                        </a>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Titik Lokasi Absensi</h3>
+                        <p class="text-xs text-gray-400">Karyawan bisa absen dari salah satu titik ini</p>
                     </div>
                 </div>
+                <button type="button" onclick="openLocationModal()"
+                        class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Tambah Lokasi
+                </button>
             </div>
+
+            <div class="p-8">
+                @forelse($locations as $location)
+                <div class="flex items-center justify-between p-5 mb-3 rounded-2xl border {{ $location->is_active ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-60' }}">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-blue-100 p-3 rounded-xl">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800">
+                                {{ $location->name }}
+                                @if(!$location->is_active)
+                                    <span class="ml-2 text-xs font-medium text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">Nonaktif</span>
+                                @endif
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                {{ $location->latitude }}, {{ $location->longitude }} &middot; Radius {{ $location->radius }}m
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button"
+                                onclick="editLocation({{ $location->id }}, '{{ $location->name }}', {{ $location->latitude }}, {{ $location->longitude }}, {{ $location->radius }}, {{ $location->is_active ? 'true' : 'false' }})"
+                                class="p-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="confirmDeleteLocation({{ $location->id }}, '{{ $location->name }}')"
+                                class="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                @empty
+                <div class="text-center py-10 text-gray-400">
+                    <p class="font-medium">Belum ada lokasi absensi.</p>
+                    <p class="text-sm">Klik "Tambah Lokasi" untuk mulai konfigurasi.</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+
+       
+        <div id="location-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden">
+                <form id="location-form" method="POST">
+                    @csrf
+                    <div id="location-method-field"></div>
+
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <h3 id="location-modal-title" class="font-bold text-gray-800 text-lg">Tambah Lokasi</h3>
+                        <button type="button" onclick="closeLocationModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Nama Lokasi</label>
+                            <input type="text" name="name" id="loc-name" required placeholder="Contoh: Kantor Pusat"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Latitude</label>
+                                <input type="text" name="latitude" id="loc-lat" required
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Longitude</label>
+                                <input type="text" name="longitude" id="loc-lng" required
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Radius (Meter)</label>
+                            <input type="number" name="radius" id="loc-radius" min="10" required value="100"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                        </div>
+
+                        <button type="button" onclick="getLocationForModal()"
+                                class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-50 transition shadow-sm text-sm">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            </svg>
+                            Gunakan Lokasi Saat Ini
+                        </button>
+
+                        <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer">
+                            <input type="checkbox" name="is_active" id="loc-active" value="1" checked
+                                class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <span class="font-medium text-gray-700 text-sm">Lokasi aktif (bisa dipakai untuk absen)</span>
+                        </label>
+                    </div>
+
+                    <div class="p-6 border-t border-gray-100 flex gap-3">
+                        <button type="button" onclick="closeLocationModal()"
+                                class="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
+                            Batal
+                        </button>
+                        <button type="submit"
+                                class="flex-1 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition">
+                            Simpan Lokasi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+       
+        <form id="delete-location-form" method="POST" class="hidden">
+            @csrf
+            @method('DELETE')
+        </form>
+
+      
+        <form id="form-setting-absensi" action="{{ route('pimpinan.settingAbsensi.update') }}" method="POST">
+            @csrf
 
             {{-- Section: Jam Kerja --}}
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
@@ -181,7 +259,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-    // Konfirmasi submit
+    
     document.getElementById('form-setting-absensi').addEventListener('submit', function(e) {
         e.preventDefault();
         const form = this;
@@ -207,7 +285,7 @@
         });
     });
 
-    // Alert sukses dari session
+
     @if(session('success'))
         Swal.fire({
             icon: 'success',
@@ -219,35 +297,7 @@
         });
     @endif
 
-    // Ambil lokasi saat ini
-    function getLocation() {
-        if (!navigator.geolocation) {
-            Swal.fire({ icon: 'error', title: 'Tidak Didukung', text: 'Browser Anda tidak mendukung geolocation.' });
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                document.getElementById('lat').value = lat;
-                document.getElementById('lng').value = lng;
-                document.getElementById('display-coord').innerText = lat + ', ' + lng;
-                document.getElementById('gmaps-link').href = `https://www.google.com/maps?q=${lat},${lng}`;
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Lokasi Berhasil Diambil',
-                    timer: 1500,
-                    showConfirmButton: false,
-                    customClass: { popup: 'rounded-3xl' }
-                });
-            },
-            function() {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Pastikan izin lokasi aktif di browser Anda.' });
-            }
-        );
-    }
-
-    // Highlight checkbox saat diklik
+    // Highlight checkbox jadwal kerja saat diklik
     document.querySelectorAll('input[name="work_schedule[]"]').forEach(cb => {
         cb.addEventListener('change', function() {
             const label = this.closest('label');
@@ -260,5 +310,79 @@
             }
         });
     });
+
+  
+    const routes = {
+        store:   "{{ route('pimpinan.settingAbsensi.lokasi.store') }}",
+        update:  "{{ route('pimpinan.settingAbsensi.lokasi.update', ':id') }}",
+        destroy: "{{ route('pimpinan.settingAbsensi.lokasi.destroy', ':id') }}",
+    };
+
+    function openLocationModal() {
+        document.getElementById('location-modal-title').innerText = 'Tambah Lokasi';
+        document.getElementById('location-form').action = routes.store;
+        document.getElementById('location-method-field').innerHTML = '';
+        document.getElementById('loc-name').value = '';
+        document.getElementById('loc-lat').value = '';
+        document.getElementById('loc-lng').value = '';
+        document.getElementById('loc-radius').value = 100;
+        document.getElementById('loc-active').checked = true;
+        document.getElementById('location-modal').classList.remove('hidden');
+        document.getElementById('location-modal').classList.add('flex');
+    }
+
+    function editLocation(id, name, lat, lng, radius, isActive) {
+        document.getElementById('location-modal-title').innerText = 'Edit Lokasi';
+        document.getElementById('location-form').action = routes.update.replace(':id', id);
+        document.getElementById('location-method-field').innerHTML = '@method("PUT")';
+        document.getElementById('loc-name').value = name;
+        document.getElementById('loc-lat').value = lat;
+        document.getElementById('loc-lng').value = lng;
+        document.getElementById('loc-radius').value = radius;
+        document.getElementById('loc-active').checked = isActive;
+        document.getElementById('location-modal').classList.remove('hidden');
+        document.getElementById('location-modal').classList.add('flex');
+    }
+
+    function closeLocationModal() {
+        document.getElementById('location-modal').classList.add('hidden');
+        document.getElementById('location-modal').classList.remove('flex');
+    }
+
+    function getLocationForModal() {
+        if (!navigator.geolocation) {
+            Swal.fire({ icon: 'error', title: 'Tidak Didukung', text: 'Browser Anda tidak mendukung geolocation.' });
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById('loc-lat').value = position.coords.latitude;
+                document.getElementById('loc-lng').value = position.coords.longitude;
+                Swal.fire({ icon: 'success', title: 'Lokasi Berhasil Diambil', timer: 1200, showConfirmButton: false });
+            },
+            function() {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Pastikan izin lokasi aktif di browser Anda.' });
+            }
+        );
+    }
+
+    function confirmDeleteLocation(id, name) {
+        Swal.fire({
+            title: `Hapus "${name}"?`,
+            text: 'Lokasi ini tidak akan bisa lagi dipakai untuk absen.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#9ca3af',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('delete-location-form');
+                form.action = routes.destroy.replace(':id', id);
+                form.submit();
+            }
+        });
+    }
     </script>
 </x-app-layout>

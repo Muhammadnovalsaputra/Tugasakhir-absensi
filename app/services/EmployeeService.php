@@ -9,9 +9,20 @@ use Illuminate\Validation\ValidationException;
 
 class EmployeeService
 {
-    public function getAllEmployeesExcept(int $userId)
+    public function getAllEmployeesExcept(int $userId, ?string $search = null)
     {
-        return User::where('id', '!=', $userId)->get();
+        $query = User::where('id', '!=', $userId);
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                ->orWhere('email', 'like', '%' . $search . '%');
+            });
+    }
+
+    return $query->orderBy('created_at', 'desc')
+                 ->paginate(10)
+                 ->withQueryString();
     }
 
     public function createEmployee(array $data): User

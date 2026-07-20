@@ -56,9 +56,16 @@ class AttendanceService
     {
         $now     = Carbon::now();
         $setting = AttendanceSetting::getActive();
-
         if (! $setting) {
             return $this->error('Pengaturan absensi belum dikonfigurasi oleh admin.');
+        }
+
+        $existingToday = $this->getTodayAttendance($user->id);
+        if ($existingToday) {
+            if (in_array($existingToday->status, ['Cuti', 'Izin'])) {
+                return $this->error("Anda sedang {$existingToday->status} hari ini. Absen masuk tidak dapat dilakukan.");
+            }
+            return $this->error('Anda sudah melakukan absen masuk hari ini.');
         }
 
         if (! $this->isWorkDay($now, $setting)) {
@@ -66,26 +73,27 @@ class AttendanceService
             return $this->error("Hari ini ({$now->translatedFormat('l')}) bukan hari kerja. Jadwal: {$jadwal}");
         }
 
-        $distance = $this->locationService->calculateDistance(
-            $setting->latitude, $setting->longitude,
+        // ── Ganti validasi jarak jadi multi-lokasi ──
+        $matched = $this->locationService->findMatchingLocation(
             $data['latitude_in'], $data['longitude_in']
         );
 
-        if ($distance > $setting->radius) {
-            return $this->error(
-                'Anda di luar jangkauan! Jarak Anda: ' . round($distance) . 'm. Maksimal: ' . $setting->radius . 'm.'
+        if (! $matched) {
+            $nearestDistance = $this->locationService->distanceToNearest(
+                $data['latitude_in'], $data['longitude_in']
             );
+            $info = $nearestDistance !== null
+                ? 'Jarak terdekat Anda: ' . round($nearestDistance) . 'm.'
+                : 'Belum ada lokasi absensi yang dikonfigurasi.';
+            return $this->error("Anda di luar jangkauan semua lokasi absensi! {$info}");
         }
+        // ──────────────────────────────────────────
 
         $entryTime    = Carbon::parse($setting->start_time);
         $earliestTime = $entryTime->copy()->subHour();
 
         if ($now->lt($earliestTime)) {
             return $this->error('Terlalu pagi! Absensi hanya bisa dilakukan mulai ' . $earliestTime->format('H:i') . '.');
-        }
-
-        if ($this->getTodayAttendance($user->id)) {
-            return $this->error('Anda sudah melakukan absen masuk hari ini.');
         }
 
         $status   = $now->greaterThan($entryTime) ? 'Terlambat' : 'Hadir';
@@ -98,6 +106,7 @@ class AttendanceService
             'image_in'     => $fileName,
             'latitude_in'  => $data['latitude_in'],
             'longitude_in' => $data['longitude_in'],
+            'attendance_location_id' => $matched['location']->id,
             'status'       => $status,
         ]);
 
@@ -112,7 +121,7 @@ class AttendanceService
         $setting    = AttendanceSetting::getActive();
         $attendance = $this->getTodayAttendance($user->id);
 
-        //Validasi: apakah status attendance mengizinkan checkout?
+        
         if (! $this->correctionService->canCheckout($user->id)) {
             
             if (! $attendance) {

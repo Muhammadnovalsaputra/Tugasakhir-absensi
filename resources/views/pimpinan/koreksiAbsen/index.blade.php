@@ -7,7 +7,6 @@
                 <p class="text-sm text-gray-500 mt-1">Kelola pengajuan koreksi absensi karyawan</p>
             </div>
             
-            
             <div class="flex items-center space-x-4 mt-4 md:mt-0">
                 <div class="relative text-gray-400 hover:text-gray-500 cursor-pointer">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,7 +25,7 @@
             <div class="bg-white overflow-hidden shadow-sm rounded-xl p-5 flex justify-between items-center border border-gray-100">
                 <div>
                     <p class="text-sm font-medium text-gray-500 truncate">Total Pengajuan</p>
-                    <p class="mt-1 text-3xl font-bold text-gray-900">{{ $corrections->total() }}</p>
+                    <p id="statTotal" class="mt-1 text-3xl font-bold text-gray-900">{{ $corrections->total() }}</p>
                 </div>
                 <div class="p-3 bg-blue-50 rounded-lg text-blue-600">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,24 +62,26 @@
                 </div>
             </div>
         </div>
+
         <div class="bg-white shadow-sm rounded-xl p-6 border border-gray-100">
-            <form method="GET" class="flex flex-col sm:flex-row gap-4 mb-6">
-                <div class="flex-1 relative rounded-md shadow-none">
+            {{-- Search & Filter Section Full-Width --}}
+            <div class="flex flex-col sm:flex-row gap-4 mb-6 w-full">
+                <div class="flex-1 relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
-                    <input type="text" name="search" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                    <input type="text" id="searchCorrection" name="search" class="focus:ring-indigo-500 focus:border-indigo-500 focus:shadow-md focus:shadow-indigo-100/50 block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white text-gray-900 transition-all outline-none"
                            placeholder="Cari nama karyawan..." value="{{ request('search') }}">
                 </div>
                 <div class="w-full sm:w-64">
-                    <select name="status" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full py-2 px-3 border border-gray-300 bg-white rounded-lg text-sm text-gray-700" onchange="this.form.submit()">
+                    <select id="statusFilter" name="status" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full py-2.5 px-3 border border-gray-300 bg-white rounded-xl text-sm text-gray-700 outline-none">
                         <option value="">Semua Status</option>
                         <option value="Pending"  @selected(request('status') === 'Pending')>Pending</option>
                         <option value="Approved" @selected(request('status') === 'Approved')>Disetujui</option>
                         <option value="Rejected" @selected(request('status') === 'Rejected')>Ditolak</option>
                     </select>
                 </div>
-            </form>
+            </div>
 
             {{-- Professional Table --}}
             <div class="overflow-x-auto">
@@ -95,7 +96,7 @@
                             <th class="pb-3 font-medium text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50 text-gray-700">
+                    <tbody id="correctionTableBody" class="divide-y divide-gray-50 text-gray-700">
                         @forelse($corrections as $correction)
                         <tr>
                             <td class="py-4 whitespace-nowrap">
@@ -151,10 +152,162 @@
                 </table>
             </div>
 
-            <div class="mt-4">
+            <div id="paginationContainer" class="mt-4">
                 {{ $corrections->links() }}
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchCorrection');
+    const statusFilter = document.getElementById('statusFilter');
+    const tableBody = document.getElementById('correctionTableBody');
+    const paginationContainer = document.getElementById('paginationContainer');
+    const statTotal = document.getElementById('statTotal');
+    
+    let debounceTimer;
+
+    // Event input pencarian
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            fetchCorrections();
+        }, 300);
+    });
+
+    // Event dropdown filter status
+    statusFilter.addEventListener('change', function () {
+        fetchCorrections();
+    });
+
+    function fetchCorrections(url = null) {
+        let search = encodeURIComponent(searchInput.value);
+        let status = encodeURIComponent(statusFilter.value);
+        
+        // Buat URL endpoint asinkronus
+        let fetchUrl = url ? url : `${window.location.pathname}?search=${search}&status=${status}`;
+
+        fetch(fetchUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (statTotal) statTotal.textContent = data.total;
+            renderTable(data.data);
+            renderPagination(data);
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    }
+
+    function renderTable(corrections) {
+        tableBody.innerHTML = '';
+
+        if (corrections.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-gray-400 py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                        <span class="mt-2 block font-medium">Data pengajuan tidak ditemukan.</span>
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        corrections.forEach(c => {
+            // Status Badge Logic
+            let statusBadge = '';
+            if (c.status === 'Pending') {
+                statusBadge = `<span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700"><span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-amber-500"></span> Pending</span>`;
+            } else if (c.status === 'Approved') {
+                statusBadge = `<span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700"><span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500"></span> Disetujui</span>`;
+            } else {
+                statusBadge = `<span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-red-50 text-red-700"><span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-red-500"></span> Ditolak</span>`;
+            }
+
+            // Date Formatting
+            let dateObj = new Date(c.date);
+            let formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            
+            let createdObj = new Date(c.created_at);
+            let formattedCreated = createdObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + `, ${String(createdObj.getHours()).padStart(2, '0')}:${String(createdObj.getMinutes()).padStart(2, '0')}`;
+
+            let claimedTime = c.claimed_check_in ? c.claimed_check_in.substring(0, 5) : '--:--';
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="py-4 whitespace-nowrap">
+                    <div class="flex items-center space-x-3">
+                        <img src="/storage/${c.proof_photo}" class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <span class="font-semibold text-gray-900 block">${c.user?.name || 'N/A'}</span>
+                            <span class="text-xs text-gray-400 block">${c.user?.role || ''}</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-4 whitespace-nowrap text-gray-600 font-medium">${formattedDate}</td>
+                <td class="py-4 whitespace-nowrap text-gray-600 font-medium">
+                    <div class="flex items-center space-x-1.5">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span>${claimedTime}</span>
+                    </div>
+                </td>
+                <td class="py-4 whitespace-nowrap">${statusBadge}</td>
+                <td class="py-4 whitespace-nowrap text-gray-400 text-xs">${formattedCreated}</td>
+                <td class="py-4 whitespace-nowrap text-right">
+                    <a href="/pimpinan/koreksiAbsen/${c.id}" class="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-lg transition-colors duration-150">
+                        Detail
+                    </a>
+                </td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function renderPagination(data) {
+        if (!data.links || data.total <= data.per_page) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+
+        let linksHtml = '';
+        data.links.forEach(link => {
+            let activeClass = link.active 
+                ? 'bg-indigo-600 text-white border-indigo-600' 
+                : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300';
+            let disabledAttr = link.url ? '' : 'disabled';
+            
+            linksHtml += `
+                <button ${disabledAttr} data-url="${link.url}" class="pagination-link px-3 py-1.5 border text-xs font-semibold rounded-lg transition ${activeClass} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}">
+                    ${link.label}
+                </button>
+            `;
+        });
+
+        paginationContainer.innerHTML = `
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                <p class="text-xs font-semibold text-gray-500 tracking-wide">
+                    Menampilkan <span class="text-gray-800 font-bold">${data.from || 0}</span> sampai <span class="text-gray-800 font-bold">${data.to || 0}</span> dari <span class="text-indigo-600 font-extrabold">${data.total}</span> total pengajuan
+                </p>
+                <div class="w-full sm:w-auto flex items-center justify-center gap-1">
+                    ${linksHtml}
+                </div>
+            </div>
+        `;
+
+        document.querySelectorAll('.pagination-link').forEach(button => {
+            button.addEventListener('click', function () {
+                let url = this.getAttribute('data-url');
+                if (url) fetchCorrections(url);
+            });
+        });
+    }
+});
+</script>
 </x-app-layout>

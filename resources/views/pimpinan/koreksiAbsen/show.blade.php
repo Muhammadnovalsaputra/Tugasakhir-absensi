@@ -26,8 +26,8 @@
         </div>
     </div>
 
-    {{-- Konten Utama --}}
-    <div class="py-6 px-4 -mt-16 mb-24 max-w-5xl mx-auto">
+    {{-- Konten Utama dengan State Management Alpine.js untuk Modal --}}
+    <div class="py-6 px-4 -mt-16 mb-24 max-w-5xl mx-auto" x-data="{ openModal: false, modalAction: '', modalTitle: '', modalConfig: {} }">
         <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 md:p-8 border border-slate-100 backdrop-blur-sm">
             
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
@@ -155,9 +155,13 @@
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800">Form Persetujuan Pimpinan</h3>
                     </div>
                     
-                    <form action="{{ route('pimpinan.koreksiAbsen.review', $correction) }}" method="POST" class="space-y-5">
+                    {{-- ID Form ditambahkan untuk mempermudah trigger submit dari luar form --}}
+                    <form id="reviewForm" action="{{ route('pimpinan.koreksiAbsen.review', $correction) }}" method="POST" class="space-y-5">
                         @csrf
                         
+                        {{-- Input Hidden untuk melempar data action ke controller --}}
+                        <input type="hidden" name="action" :value="modalAction">
+
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Catatan Keputusan (Opsional)</label>
                             <textarea name="note" 
@@ -168,8 +172,18 @@
                         </div>
 
                         <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                            <button type="submit" name="action" value="reject"
-                                    onclick="return confirm('Apakah Anda yakin ingin MENOLAK pengajuan koreksi absen ini?')"
+                            {{-- Button Reject memicu State Modal Reject --}}
+                            <button type="button" 
+                                    @click="
+                                        openModal = true; 
+                                        modalAction = 'reject'; 
+                                        modalTitle = 'Tolak Pengajuan Koreksi?';
+                                        modalConfig = { 
+                                            desc: 'Apakah Anda yakin ingin menolak pengajuan ini? Karyawan akan menerima notifikasi penolakan.',
+                                            btnClass: 'bg-rose-600 hover:bg-rose-700 focus:ring-rose-100 text-white',
+                                            btnText: 'Ya, Tolak Pengajuan'
+                                        }
+                                    "
                                     class="w-full sm:flex-1 bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-200 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 active:scale-98 flex items-center justify-center gap-2 shadow-sm hover:shadow">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
@@ -177,8 +191,18 @@
                                 Tolak Pengajuan
                             </button>
                             
-                            <button type="submit" name="action" value="approve"
-                                    onclick="return confirm('Apakah Anda yakin ingin menyetujui pengajuan koreksi absen ini?')"
+                            {{-- Button Approve memicu State Modal Approve --}}
+                            <button type="button" 
+                                    @click="
+                                        openModal = true; 
+                                        modalAction = 'approve'; 
+                                        modalTitle = 'Setujui Pengajuan Koreksi?';
+                                        modalConfig = { 
+                                            desc: 'Apakah Anda yakin ingin menyetujui pengajuan ini? Data absensi karyawan akan langsung diperbarui di sistem.',
+                                            btnClass: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-100 text-white',
+                                            btnText: 'Ya, Setujui & Rekam'
+                                        }
+                                    "
                                     class="w-full sm:flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md shadow-indigo-200 hover:shadow-lg transition-all duration-200 active:scale-98 flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path>
@@ -191,5 +215,70 @@
             @endif
 
         </div>
+
+
+        <div class="fixed inset-0 z-50 overflow-y-auto" 
+             x-show="openModal" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             style="display: none;">
+            
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" @click="openModal = false"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-3xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-md sm:w-full sm:p-6 border border-slate-100"
+                     x-show="openModal"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                    
+                    <div>
+                        
+                        <div class="flex items-center justify-center w-12 h-12 mx-auto rounded-2xl"
+                             :class="modalAction === 'approve' ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'">
+                            
+                            
+                            <svg x-show="modalAction === 'approve'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            
+                            <svg x-show="modalAction === 'reject'" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+
+                        <div class="mt-4 text-center sm:mt-5">
+                            <h3 class="text-base font-bold leading-6 text-slate-900" x-text="modalTitle"></h3>
+                            <div class="mt-2">
+                                <p class="text-xs text-slate-500 leading-relaxed" x-text="modalConfig.desc"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-2 gap-3">
+                        <button type="button" 
+                                @click="openModal = false" 
+                                class="inline-flex justify-center w-full px-4 py-3 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors focus:outline-none">
+                            Batalkan
+                        </button>
+                        <button type="button"
+                                @click="document.getElementById('reviewForm').submit()"
+                                :class="modalConfig.btnClass"
+                                class="inline-flex justify-center w-full px-4 py-3 text-xs font-semibold rounded-xl focus:outline-none focus:ring-4 transition-all">
+                            <span x-text="modalConfig.btnText"></span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 </x-app-layout>

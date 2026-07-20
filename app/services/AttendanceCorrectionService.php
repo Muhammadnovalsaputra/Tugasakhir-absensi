@@ -40,6 +40,13 @@ class AttendanceCorrectionService
         return $this->isAlpaTime() ? 'show_correction' : 'can_checkin';
     }
 
+    public function getTodayCorrection(int $userId): ?AttendanceCorrection
+    {
+        return AttendanceCorrection::where('user_id', $userId)
+            ->whereDate('date', Carbon::today())
+            ->first();
+    }
+
     public function isAlpaTime(): bool
     {
         $setting = AttendanceSetting::getActive();

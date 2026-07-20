@@ -88,11 +88,22 @@ class LeavePermitService
         $leave->delete();
     }
 
-    public function getAllLeaveRequests()
+    public function getAllLeaveRequests(?string $search = null)
     {
         return LeavePermit::with('user')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        ->when($search, function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($uq) use ($search) {
+                    $uq->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('leave_type', 'like', "%{$search}%")
+                ->orWhere('reason', 'like', "%{$search}%")
+                ->orWhere('status', 'like', "%{$search}%");
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(10)
+        ->withQueryString();
     }
 
     public function getLeaveStatistics(): array
@@ -115,11 +126,11 @@ class LeavePermitService
             $leave = LeavePermit::with('user')
                 ->lockForUpdate()
                 ->find($leaveId);
-            
+
             if (!$leave) {
                 throw new \Exception('Pengajuan cuti tidak ditemukan.');
             }
-            
+
             if ($leave->status === $status) {
                 throw new \Exception('Status pengajuan cuti sudah ' . $status);
             }
@@ -128,9 +139,52 @@ class LeavePermitService
                 $this->validateQuotaForApproval($leave);
             }
 
+            $wasApproved = $leave->isApproved();
+
             $leave->update(['status' => $status]);
+
+            if ($status === 'Approved') {
+                $this->syncAttendanceForLeave($leave);
+            } elseif ($wasApproved) {
+                $this->removeAutoLeaveAttendance($leave);
+            }
         });
     }
+
+    private function syncAttendanceForLeave(LeavePermit $leave): void
+    {
+        $attendanceStatus = $leave->leave_type === 'IzinMendesak' ? 'Izin' : 'Cuti';
+
+        $period = \Carbon\CarbonPeriod::create($leave->start_date, $leave->end_date);
+
+        foreach ($period as $date) {
+            $existing = \App\Models\Attendance::where('user_id', $leave->user_id)
+                ->whereDate('date', $date->toDateString())
+                ->exists();
+
+            
+            if ($existing) {
+                continue;
+            }
+
+            \App\Models\Attendance::create([
+                'user_id' => $leave->user_id,
+                'date'    => $date->toDateString(),
+                'status'  => $attendanceStatus,
+            ]);
+        }
+    }
+
+    private function removeAutoLeaveAttendance(LeavePermit $leave): void
+    {
+        \App\Models\Attendance::where('user_id', $leave->user_id)
+            ->whereBetween('date', [$leave->start_date, $leave->end_date])
+            ->whereIn('status', ['Cuti', 'Izin'])
+            ->whereNull('check_in') 
+            ->delete();
+    }
+
+    
 
     private function validateQuotaForApproval(LeavePermit $leave): void
     {

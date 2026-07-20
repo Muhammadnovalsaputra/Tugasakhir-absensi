@@ -50,20 +50,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/rekap-absensi/export', [AttendanceController::class, 'exportExcel'])->name('rekapAbsensi.export');
         Route::get('rekap-absensi/export-pdf', [AttendanceController::class, 'exportPdf'])->name('rekapAbsensi.exportPdf');
 
+        // ─── Setting Absensi (global: jam kerja, jadwal) ────────────────
         Route::get('/setting-absensi', [ManageEmployesController::class, 'settingAttendance'])->name('settingAbsensi.index');
         Route::post('/setting-absensi', [ManageEmployesController::class, 'updateAttendanceSetting'])->name('settingAbsensi.update');
+
+        // ─── Lokasi Absensi (multi-titik) ────────────────────────────────
+        Route::prefix('setting-absensi/lokasi')->name('settingAbsensi.lokasi.')->group(function () {
+            Route::post('/', [ManageEmployesController::class, 'storeLocation'])->name('store');
+            Route::put('/{location}', [ManageEmployesController::class, 'updateLocation'])->name('update');
+            Route::delete('/{location}', [ManageEmployesController::class, 'destroyLocation'])->name('destroy');
+        });
 
         Route::get('/kelola-karyawan', [ManageEmployesController::class, 'index'])->name('kelolaKaryawan.index');
         Route::post('/kelola-karyawan', [ManageEmployesController::class, 'store'])->name('kelolaKaryawan.store');
         Route::put('/kelola-karyawan/{id}', [ManageEmployesController::class, 'update'])->name('kelolaKaryawan.update');
         Route::delete('/kelola-karyawan/{id}', [ManageEmployesController::class, 'destroy'])->name('kelolaKaryawan.destroy');
 
-        Route::prefix('koreksi-absen')->name('koreksiAbsen.')->group(function () {
+       
+     Route::prefix('koreksi-absen')->name('koreksiAbsen.')->group(function () {
             Route::get('', [AttendanceCorrectionController::class, 'leaderIndex'])->name('index'); 
             Route::get('{correction}', [AttendanceCorrectionController::class, 'show'])->name('show'); 
             Route::post('{correction}', [AttendanceCorrectionController::class, 'review'])->name('review'); 
         });
     });
+    
 
     //  ROUTES KARYAWAN
 

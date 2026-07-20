@@ -32,7 +32,6 @@
             </p>
 
             <div class="mt-4">
-                {{-- stateButton sudah include form check-in, form check-out, dan semua script --}}
                 @include('karyawan.absensi.stateButton')
             </div>
         </div>
